@@ -1,0 +1,710 @@
+{
+ "note": "SIMULATED labeled set. Not real photos. Replace with real flood photos + measured depths.",
+ "items": [
+  {
+   "id": "SIM-01",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "person",
+   "true_depth_cm": 96,
+   "masks": [
+    {
+     "label": "person",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.76
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.5637643422284938,
+      1.0,
+      1.0
+     ],
+     "score": 0.93
+    }
+   ]
+  },
+  {
+   "id": "SIM-02",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "door",
+   "true_depth_cm": 102,
+   "masks": [
+    {
+     "label": "door",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.95
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.6123369768425264,
+      1.0,
+      1.0
+     ],
+     "score": 0.82
+    }
+   ]
+  },
+  {
+   "id": "SIM-03",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "car_tire",
+   "true_depth_cm": 27,
+   "masks": [
+    {
+     "label": "car_tire",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.84
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.6714744207441689,
+      1.0,
+      1.0
+     ],
+     "score": 0.8
+    }
+   ]
+  },
+  {
+   "id": "SIM-04",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "jeepney",
+   "true_depth_cm": 30,
+   "masks": [
+    {
+     "label": "jeepney",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.88
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.8139223922329886,
+      1.0,
+      1.0
+     ],
+     "score": 0.9
+    }
+   ]
+  },
+  {
+   "id": "SIM-05",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "curb",
+   "true_depth_cm": 3,
+   "masks": [
+    {
+     "label": "curb",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.7
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.7337437392544872,
+      1.0,
+      1.0
+     ],
+     "score": 0.95
+    }
+   ]
+  },
+  {
+   "id": "SIM-06",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "person",
+   "true_depth_cm": 105,
+   "masks": [
+    {
+     "label": "person",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.8
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.47719338437731085,
+      1.0,
+      1.0
+     ],
+     "score": 0.83
+    }
+   ]
+  },
+  {
+   "id": "SIM-07",
+   "simulated": true,
+   "kind": "no_reference",
+   "reference": "door",
+   "true_depth_cm": 144,
+   "masks": [
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.4817198158254765,
+      1.0,
+      1.0
+     ],
+     "score": 0.82
+    }
+   ]
+  },
+  {
+   "id": "SIM-08",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "car_tire",
+   "true_depth_cm": 55,
+   "masks": [
+    {
+     "label": "car_tire",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.87
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.403632628298303,
+      1.0,
+      1.0
+     ],
+     "score": 0.95
+    }
+   ]
+  },
+  {
+   "id": "SIM-09",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "jeepney",
+   "true_depth_cm": 109,
+   "masks": [
+    {
+     "label": "jeepney",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.81
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.4944016373334344,
+      1.0,
+      1.0
+     ],
+     "score": 0.9
+    }
+   ]
+  },
+  {
+   "id": "SIM-10",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "curb",
+   "true_depth_cm": 12,
+   "masks": [
+    {
+     "label": "curb",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.87
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.40179327815401483,
+      1.0,
+      1.0
+     ],
+     "score": 0.96
+    }
+   ]
+  },
+  {
+   "id": "SIM-11",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "person",
+   "true_depth_cm": 87,
+   "masks": [
+    {
+     "label": "person",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.76
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.5711626846099115,
+      1.0,
+      1.0
+     ],
+     "score": 0.85
+    }
+   ]
+  },
+  {
+   "id": "SIM-12",
+   "simulated": true,
+   "kind": "low_confidence",
+   "reference": "door",
+   "true_depth_cm": 12,
+   "masks": [
+    {
+     "label": "door",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.4
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.8568972923755898,
+      1.0,
+      1.0
+     ],
+     "score": 0.84
+    }
+   ]
+  },
+  {
+   "id": "SIM-13",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "car_tire",
+   "true_depth_cm": 7,
+   "masks": [
+    {
+     "label": "car_tire",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.8
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.8279299215914074,
+      1.0,
+      1.0
+     ],
+     "score": 0.87
+    }
+   ]
+  },
+  {
+   "id": "SIM-14",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "jeepney",
+   "true_depth_cm": 31,
+   "masks": [
+    {
+     "label": "jeepney",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.77
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.8489755919125815,
+      1.0,
+      1.0
+     ],
+     "score": 0.97
+    }
+   ]
+  },
+  {
+   "id": "SIM-15",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "curb",
+   "true_depth_cm": 10,
+   "masks": [
+    {
+     "label": "curb",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.9
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.48577336890811457,
+      1.0,
+      1.0
+     ],
+     "score": 0.83
+    }
+   ]
+  },
+  {
+   "id": "SIM-16",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "person",
+   "true_depth_cm": 57,
+   "masks": [
+    {
+     "label": "person",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.98
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.6746109596004737,
+      1.0,
+      1.0
+     ],
+     "score": 0.92
+    }
+   ]
+  },
+  {
+   "id": "SIM-17",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "door",
+   "true_depth_cm": 84,
+   "masks": [
+    {
+     "label": "door",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.92
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.6369502999898443,
+      1.0,
+      1.0
+     ],
+     "score": 0.84
+    }
+   ]
+  },
+  {
+   "id": "SIM-18",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "car_tire",
+   "true_depth_cm": 2,
+   "masks": [
+    {
+     "label": "car_tire",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.79
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.8286259729199195,
+      1.0,
+      1.0
+     ],
+     "score": 0.85
+    }
+   ]
+  },
+  {
+   "id": "SIM-19",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "jeepney",
+   "true_depth_cm": 32,
+   "masks": [
+    {
+     "label": "jeepney",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.79
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.8614373013518014,
+      1.0,
+      1.0
+     ],
+     "score": 0.92
+    }
+   ]
+  },
+  {
+   "id": "SIM-20",
+   "simulated": true,
+   "kind": "no_reference",
+   "reference": "curb",
+   "true_depth_cm": 6,
+   "masks": [
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.6384650624067824,
+      1.0,
+      1.0
+     ],
+     "score": 0.96
+    }
+   ]
+  },
+  {
+   "id": "SIM-21",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "person",
+   "true_depth_cm": 69,
+   "masks": [
+    {
+     "label": "person",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.86
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.6391421767889821,
+      1.0,
+      1.0
+     ],
+     "score": 0.85
+    }
+   ]
+  },
+  {
+   "id": "SIM-22",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "door",
+   "true_depth_cm": 88,
+   "masks": [
+    {
+     "label": "door",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.95
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.6710505071501188,
+      1.0,
+      1.0
+     ],
+     "score": 0.87
+    }
+   ]
+  },
+  {
+   "id": "SIM-23",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "car_tire",
+   "true_depth_cm": 14,
+   "masks": [
+    {
+     "label": "car_tire",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.73
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.8065740289425297,
+      1.0,
+      1.0
+     ],
+     "score": 0.81
+    }
+   ]
+  },
+  {
+   "id": "SIM-24",
+   "simulated": true,
+   "kind": "low_confidence",
+   "reference": "jeepney",
+   "true_depth_cm": 16,
+   "masks": [
+    {
+     "label": "jeepney",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.4
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.8514459956050886,
+      1.0,
+      1.0
+     ],
+     "score": 0.91
+    }
+   ]
+  },
+  {
+   "id": "SIM-25",
+   "simulated": true,
+   "kind": "normal",
+   "reference": "curb",
+   "true_depth_cm": 12,
+   "masks": [
+    {
+     "label": "curb",
+     "bbox": [
+      0.4,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "score": 0.81
+    },
+    {
+     "label": "water",
+     "bbox": [
+      0.0,
+      0.41040489597387186,
+      1.0,
+      1.0
+     ],
+     "score": 0.98
+    }
+   ]
+  }
+ ]
+}

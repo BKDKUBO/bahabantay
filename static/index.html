@@ -9,6 +9,9 @@ h1{font-size:20px;margin:0}.banner{background:#fff3cd;padding:6px;font-size:12px
 .legend span{display:inline-block;width:12px;height:12px;border-radius:50%;margin:0 4px 0 8px;vertical-align:middle}
 form label{display:block;font-size:13px;margin-top:6px}input,select{width:100%;box-sizing:border-box}
 pre{white-space:pre-wrap;background:#f6f8fa;padding:8px;font-size:12px}.tabs button{margin-right:4px}
+.dot{width:20px;height:20px;border-radius:50%;border:1px solid #333;text-align:center;font:bold 13px/20px system-ui;color:#fff}
+.arrow{display:inline-block;font:bold 18px/22px system-ui;background:#fff;border:2px solid currentColor;border-radius:6px;padding:0 4px;white-space:nowrap;box-shadow:0 1px 3px #0006}.rising{color:#c62828}.falling{color:#1565c0}.steady{color:#444}
+.q{background:#e3f2fd;border-left:4px solid #1565c0;padding:6px;margin:6px 0;font-size:13px}table{font-size:12px;border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #eee;padding:2px}
 </style></head><body>
 <div id="map"></div>
 <aside>
@@ -24,27 +27,44 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:8px;font-size:12px}.tabs but
 <label>Lat<input name="lat" id="lat" required></label><label>Lng<input name="lng" id="lng" required></label>
 <small>Click the map to set location.</small><br><button>Submit</button> <span id="msg"></span>
 </form>
+<h3>Needs info / Kailangan ng sagot</h3><div id="needs"></div>
 <h3>Situation report / Ulat</h3>
 <select id="brgy"></select>
 <div class="tabs"><button data-l="fil">Filipino</button><button data-l="en">English</button></div>
-<pre id="rep">Select a barangay.</pre>
+<table id="streets"></table><pre id="rep">Select a barangay.</pre>
 </aside>
 <script>
-const COLORS={none:'#2e7d32',ankle:'#9ccc65',knee:'#fbc02d',waist:'#ef6c00',chest:'#c62828',unknown:'#777'};
+const COLORS={none:'#2e7d32',ankle:'#9ccc65',knee:'#fbc02d',waist:'#ef6c00',chest:'#c62828',cant_tell:'#777'};
 document.getElementById('legend').innerHTML=Object.entries(COLORS).map(([k,c])=>`<span style="background:${c}"></span>${k}`).join('');
 const map=L.map('map').setView([14.657,121.101],15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
 const layer=L.layerGroup().addTo(map);let sitrep=null,lang='fil';
 map.on('click',e=>{lat.value=e.latlng.lat.toFixed(5);lng.value=e.latlng.lng.toFixed(5)});
+const REFS={door:'pinto / door',car_tire:'gulong / car tire',person:'tao / person',jeepney:'jeepney',curb:'gilid ng kalsada / curb'};
+function answerForm(r){return `<div class="q"><b>❓ ${r.question}</b><br>
+ <select id="ref${r.id}">${Object.entries(REFS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+ <select id="pct${r.id}"><option value="25">¼</option><option value="50">½</option><option value="75">¾</option><option value="100">${r.lang=='fil'?'lubog / fully under':'fully under'}</option></select>
+ <button onclick="answer(${r.id})">${r.lang=='fil'?'Sagot':'Answer'}</button></div>`}
+async function answer(id){const r=await fetch(`/api/reports/${id}/answer`,{method:'POST',headers:{'Content-Type':'application/json'},
+ body:JSON.stringify({reference:document.getElementById('ref'+id).value,submerged_pct:+document.getElementById('pct'+id).value})});
+ if(r.ok)load();else alert((await r.json()).detail);}
 async function load(){layer.clearLayers();const rs=await (await fetch('/api/reports')).json();
- rs.forEach(r=>L.circleMarker([r.lat,r.lng],{radius:10,color:'#333',weight:1,fillColor:COLORS[r.band]||'#777',fillOpacity:.85})
-  .bindPopup(`<b>${r.street}, ${r.barangay}</b>${r.simulated?' <i>(SIMULATED)</i>':''}<br>~${r.depth_cm} cm (${r.band}), conf ${r.confidence}<br>ref: ${r.reference}<br>${r.note||''}<br><img src="${r.image_path}" width="200">`).addTo(layer));
+ rs.filter(r=>r.status!='duplicate').forEach(r=>{const ni=r.status=='needs_info';
+  L.marker([r.lat,r.lng],{icon:L.divIcon({className:'',html:`<div class="dot" style="background:${COLORS[r.band]||'#777'}">${ni?'?':''}</div>`,iconSize:[20,20]})})
+  .bindPopup(`<b>${r.street}, ${r.barangay}</b>${r.simulated?' <i>(SIMULATED)</i>':''}<br>${r.depth_cm!=null?'~'+r.depth_cm+' cm ('+r.band+')':"can't tell yet"}, conf ${r.confidence}<br>${new Date(r.reported_at).toLocaleTimeString()}<br>${r.note||''}${ni?answerForm(r):''}<br><img src="${r.image_path}" width="200">`).addTo(layer)});
+ const needs=rs.filter(r=>r.status=='needs_info');
+ document.getElementById('needs').innerHTML=needs.length?needs.map(r=>`<div><b>${r.street}, ${r.barangay}</b> ${r.simulated?'(SIMULATED)':''}${answerForm(r)}</div>`).join(''):'<small>None</small>';
  const bs=await (await fetch('/api/barangays')).json();const sel=document.getElementById('brgy');const cur=sel.value;
- sel.innerHTML=bs.map(b=>`<option>${b}</option>`).join('');if(cur)sel.value=cur;showRep();}
+ sel.innerHTML=bs.map(b=>`<option>${b}</option>`).join('');if(cur)sel.value=cur;
+ for(const b of bs){const sm=await (await fetch('/api/summary/'+encodeURIComponent(b))).json();
+  sm.streets.filter(t=>t.trend_arrow).forEach(t=>L.marker([t.lat,t.lng],{icon:L.divIcon({className:'',html:`<div class="arrow ${t.trend}">${t.trend_arrow} ${t.rate_cm_per_h>0?"+":""}${t.rate_cm_per_h} cm/h</div>`,iconSize:null,iconAnchor:[-14,30]})})
+   .bindTooltip(`${t.street}: ${t.trend} ${t.rate_cm_per_h} cm/h`).addTo(layer));}
+ showRep();}
 async function showRep(){const b=brgy.value;if(!b)return;const r=await fetch('/api/sitrep/'+encodeURIComponent(b));
- sitrep=r.ok?await r.json():null;rep.textContent=sitrep?sitrep[lang]:'No reports.';}
+ sitrep=r.ok?await r.json():null;rep.textContent=sitrep?sitrep[lang]:'No reports.';
+ streets.innerHTML=sitrep?'<tr><th>Street</th><th>cm</th><th>Trend</th><th>Pass</th></tr>'+sitrep.summary.streets.map(t=>`<tr><td>${t.street}</td><td>${t.latest_depth_cm}</td><td class="${t.trend}">${t.trend_arrow} ${t.rate_cm_per_h??''}${t.rate_cm_per_h!=null?' cm/h':''}</td><td>${t.passability}</td></tr>`).join(''):'';}
 brgy.onchange=showRep;document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{lang=b.dataset.l;rep.textContent=sitrep?sitrep[lang]:''});
 f.onsubmit=async e=>{e.preventDefault();msg.textContent='…';const r=await fetch('/api/reports',{method:'POST',body:new FormData(f)});
- const j=await r.json();msg.textContent=r.ok?`Saved: ~${j.depth_cm} cm (${j.band})`:('Error: '+j.detail);if(r.ok)load();};
+ const j=await r.json();msg.innerHTML=!r.ok?('Error: '+j.detail):j.status=='needs_info'?answerForm(j):`Saved: ~${j.depth_cm} cm (${j.band})${j.duplicate_of?' — merged with #'+j.duplicate_of:''}`;if(r.ok)load();};
 load();
 </script></body></html>

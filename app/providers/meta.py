@@ -19,6 +19,22 @@ class MetaVision:
         raise NotImplementedError("Meta SAM 3.1 provider not implemented yet (no API access).")
 
 
+    def track_frames(self, frames: list[bytes], prompts: list[str]) -> list[Segmentation]:
+        # TODO(meta): use SAM 3.1 video / multi-frame tracking via the Meta model API
+        #   to follow the same water surface + reference object across a short clip
+        #   or several photos of one spot, giving a per-frame waterline for trend.
+        raise NotImplementedError("Meta SAM 3.1 video tracking not implemented yet (no API access).")
+
+
+class MetaAgent:
+    name = "meta"
+
+    def run(self, report: dict, tools) -> dict:
+        # TODO(meta): Muse Spark tool-calling loop over tools.get_nearby_reports,
+        #   tools.merge_duplicates, tools.flag_people_at_risk, tools.ask_followup.
+        raise NotImplementedError("Meta Muse Spark agent not implemented yet (no API access).")
+
+
 class MetaReports:
     name = "meta"
 

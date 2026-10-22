@@ -26,8 +26,15 @@ class Segmentation:
 class VisionProvider(Protocol):
     name: str
     def segment(self, image: bytes, prompts: list[str]) -> Segmentation: ...
+    def track_frames(self, frames: list[bytes], prompts: list[str]) -> list[Segmentation]: ...
 
 
 class ReportProvider(Protocol):
     name: str
     def situation_report(self, summary: dict, lang: str) -> str: ...
+
+
+class AgentProvider(Protocol):
+    """Runs the report-triage agent. `tools` is an app.agent.Tools instance."""
+    name: str
+    def run(self, report: dict, tools) -> dict: ...

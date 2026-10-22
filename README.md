@@ -2,32 +2,48 @@
 
 Residents send flood photos with a location. A vision model segments the water and reference objects (people, doors, car tires, jeepneys, curbs) to estimate depth. A report agent writes street-by-street situation reports in **Filipino and English**, and a live map serves barangay disaster offices (BDRRMO).
 
-> **Status:** runs fully offline with a **mock** provider. No Meta API calls, no credentials, no cloud resources. All 10 sample reports are **SIMULATED** (Marikina area, placeholder images).
+> **Status:** runs fully offline with a **mock** provider. No Meta API calls, no credentials, no cloud resources. All 18 sample reports and the 25-item eval set are **SIMULATED** (Marikina area, placeholder images).
 
 ## Setup
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python scripts/seed.py          # loads 10 SIMULATED reports into data/bahabantay.db
+.venv/bin/python scripts/seed.py          # loads 18 SIMULATED reports (incl. time series) into data/bahabantay.db
 .venv/bin/uvicorn app.main:app --port 8765
 # open http://localhost:8765
 .venv/bin/pytest -q                        # tests
+.venv/bin/python scripts/eval_depth.py     # accuracy check -> docs/eval/results.md
 ```
 Env vars: `BAHABANTAY_PROVIDER=mock|meta` (default mock), `BAHABANTAY_DB`, `BAHABANTAY_UPLOADS`.
+
+## Features
+- **Photo → depth:** segment water + reference object (person, door, car tire, jeepney, curb) → depth in cm, level, confidence.
+- **Can't tell instead of guessing:** no reference object or confidence < 0.55 → `cant_tell`, no depth.
+- **Agent with tools** (`app/agent.py`, provider `run()`): `get_nearby_reports(radius)`, `merge_duplicates` (same street, ≤30 m, ≤20 min), `flag_people_at_risk`, `ask_followup`. A can't-tell photo gets a follow-up question in the reporter's language (Filipino/English, detected from the note), e.g. *"May pinto, kotse, gulong o tao ba sa litrato? Hanggang saan ang tubig dito?"* The report stays **needs info** until answered via `POST /api/reports/{id}/answer` `{reference, submerged_pct}`, which re-estimates depth. Questions show on the map popup and in a "Needs info" panel.
+- **Rising / falling trend:** per street, readings in the last 6 h → least-squares slope in cm/hour; ±5 cm/h = steady. Arrows on the map, in the street table and in the sitrep.
+- **Bilingual situation report** per barangay, with passability (all / trucks / boats), trend, people-at-risk and pending follow-ups.
+- **Accuracy check:** `scripts/eval_depth.py` → mean absolute error, per-level accuracy, can't-tell rate.
+
+## Accuracy check (SIMULATED data only)
+`sample_data/eval/labeled_simulated.json` (made by `scripts/make_eval_set.py`) is 25 synthetic items with known depths. Current result: MAE 5.3 cm, level accuracy 71%, can't tell 16%. **These numbers only test the math. The set must be replaced by real flood photos with measured depths before any accuracy claim.** See `docs/eval/results.md`.
 
 ## Architecture
 ```
 static/index.html  Leaflet map (markers colored by depth band), upload form, bilingual report view
-app/main.py        FastAPI: POST/GET /api/reports, /api/barangays, /api/summary/{brgy}, /api/sitrep/{brgy}, /api/health
+app/main.py        FastAPI: POST/GET /api/reports, POST /api/reports/{id}/answer, GET /api/reports/{id}/nearby,
+                   /api/barangays, /api/summary/{brgy}, /api/sitrep/{brgy}, /api/health
+app/agent.py       agent tools, language detection, follow-up questions
 app/depth.py       pipeline: provider.segment() -> waterline vs reference-object height -> depth cm, band, confidence
-app/aggregate.py   per-street rollup (max depth, passability: all / trucks / boats, people-at-risk flag)
+app/aggregate.py   per-street rollup (latest depth, trend cm/h, passability, people-at-risk)
 app/db.py          SQLite storage
-app/providers/     base.py (interface)  mock.py (deterministic fake)  meta.py (stub, raises NotImplementedError)
+app/providers/     base.py (Vision/Report/Agent interfaces)  mock.py (deterministic)  meta.py (stubs: SAM 3.1 segment +
+                   video/multi-frame tracking, Muse Spark agent + sitrep; all raise NotImplementedError)
+scripts/           seed.py, make_eval_set.py, eval_depth.py
 ```
-Depth bands: none <3 cm, ankle <20, knee <55, waist <110, chest 110+. Passability: all <25 cm, trucks <60, boats 60+.
+Depth bands: can't tell (no reference / low confidence), none <3 cm, ankle <20, knee <55, waist <110, chest 110+. Passability: all <25 cm, trucks <60, boats 60+.
 
 ## Mock vs Meta provider
 - **mock**: fake masks derived from a hash of the image bytes, so the same photo always gives the same depth. Reports come from fixed EN/FIL templates and say so.
-- **meta**: `MetaVision.segment` (SAM 3.1) and `MetaReports.situation_report` (Muse Spark) raise `NotImplementedError` with TODOs. The API returns HTTP 501 if selected. Keys must come from env vars, never committed.
+- **meta**: `MetaVision.segment` (SAM 3.1), `MetaVision.track_frames` (SAM 3.1 video tracking), `MetaAgent.run` (Muse Spark tool loop) and `MetaReports.situation_report` (Muse Spark) raise `NotImplementedError` with TODOs. The API returns HTTP 501 if selected. Keys must come from env vars, never committed.
 
 ## 10-day build plan (Oct 26 – Nov 4, 2026)
 | Day | Date | Work |
@@ -43,11 +59,19 @@ Depth bands: none <3 cm, ankle <20, knee <55, waist <110, chest 110+. Passabilit
 | 9 | Nov 3 | Demo deploy (only after approval); record video |
 | 10 | Nov 4 | Submission write-up, README polish; submit before 9 PM ET (Nov 5, 9 AM Manila) |
 
+## Judging criteria mapping
+| Criterion | How BahaBantay answers it |
+|---|---|
+| **Impact** | ~20 typhoons/yr in PH; turns scattered "baha na dito!" posts into street-level depth, trend and passability for BDRRMOs; flags people at risk; Filipino-first. |
+| **Meta tooling** | SAM 3.1 for water + reference-object segmentation and multi-frame tracking (trend); Muse Spark as the tool-calling agent (nearby, dedupe, risk, follow-up) and bilingual sitrep writer. |
+| **Technical** | Clean provider interfaces, can't-tell instead of guessing, follow-up loop, least-squares trend, dedupe, eval harness with MAE / per-level accuracy / can't-tell rate, 18 tests. |
+| **Demo** | Live map with colored dots and trend arrows, a follow-up question answered on screen, Filipino ↔ English sitrep toggle. |
+
 ## Demo script outline (≈3 min)
 1. Problem: scattered "baha na dito!" posts; responders guess depth.
-2. Resident uploads a flood photo on a phone; pin drops on map.
-3. Show masks (water + door/person) and estimated depth band with confidence.
-4. Map fills with colored reports across Tumana / Malanday / Nangka.
-5. BDRRMO opens the Filipino sitrep, switches to English; people-at-risk flag highlighted.
-6. Ask a follow-up question to the agent (truck route).
+2. Resident uploads a flood photo; pin drops; masks + depth level + confidence.
+3. Unclear photo → app answers "can't tell" and asks *"May pinto o kotse ba sa litrato?"*; resident answers → depth fills in.
+4. Map: Bayabas St ↑ +24 cm/h (rising), Rodriguez Ave ↓ (falling); duplicate reports merged.
+5. BDRRMO opens the Filipino sitrep, switches to English; people-at-risk flag and pending follow-ups.
+6. Accuracy slide: eval method (real measured photos by then), MAE and can't-tell rate.
 7. Close: impact, Meta models used, what's next.
