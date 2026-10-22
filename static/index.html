@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BahaBantay — flood reports</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+body{margin:0;font-family:system-ui,sans-serif;display:grid;grid-template-columns:1fr 380px;height:100vh}
+#map{height:100vh}aside{overflow:auto;padding:12px;border-left:1px solid #ddd}
+h1{font-size:20px;margin:0}.banner{background:#fff3cd;padding:6px;font-size:12px;margin:8px 0}
+.legend span{display:inline-block;width:12px;height:12px;border-radius:50%;margin:0 4px 0 8px;vertical-align:middle}
+form label{display:block;font-size:13px;margin-top:6px}input,select{width:100%;box-sizing:border-box}
+pre{white-space:pre-wrap;background:#f6f8fa;padding:8px;font-size:12px}.tabs button{margin-right:4px}
+</style></head><body>
+<div id="map"></div>
+<aside>
+<h1>🌊 BahaBantay</h1>
+<div class="banner">Demo build: mock vision/report provider. Sample reports are <b>SIMULATED</b>, not real floods.</div>
+<div class="legend" id="legend"></div>
+<h3>Report a flood / Mag-ulat ng baha</h3>
+<form id="f">
+<label>Photo / Larawan<input type="file" name="photo" accept="image/*" required></label>
+<label>Barangay<input name="barangay" required value="Tumana"></label>
+<label>Street / Kalye<input name="street" required></label>
+<label>Note / Tala<input name="note"></label>
+<label>Lat<input name="lat" id="lat" required></label><label>Lng<input name="lng" id="lng" required></label>
+<small>Click the map to set location.</small><br><button>Submit</button> <span id="msg"></span>
+</form>
+<h3>Situation report / Ulat</h3>
+<select id="brgy"></select>
+<div class="tabs"><button data-l="fil">Filipino</button><button data-l="en">English</button></div>
+<pre id="rep">Select a barangay.</pre>
+</aside>
+<script>
+const COLORS={none:'#2e7d32',ankle:'#9ccc65',knee:'#fbc02d',waist:'#ef6c00',chest:'#c62828',unknown:'#777'};
+document.getElementById('legend').innerHTML=Object.entries(COLORS).map(([k,c])=>`<span style="background:${c}"></span>${k}`).join('');
+const map=L.map('map').setView([14.657,121.101],15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+const layer=L.layerGroup().addTo(map);let sitrep=null,lang='fil';
+map.on('click',e=>{lat.value=e.latlng.lat.toFixed(5);lng.value=e.latlng.lng.toFixed(5)});
+async function load(){layer.clearLayers();const rs=await (await fetch('/api/reports')).json();
+ rs.forEach(r=>L.circleMarker([r.lat,r.lng],{radius:10,color:'#333',weight:1,fillColor:COLORS[r.band]||'#777',fillOpacity:.85})
+  .bindPopup(`<b>${r.street}, ${r.barangay}</b>${r.simulated?' <i>(SIMULATED)</i>':''}<br>~${r.depth_cm} cm (${r.band}), conf ${r.confidence}<br>ref: ${r.reference}<br>${r.note||''}<br><img src="${r.image_path}" width="200">`).addTo(layer));
+ const bs=await (await fetch('/api/barangays')).json();const sel=document.getElementById('brgy');const cur=sel.value;
+ sel.innerHTML=bs.map(b=>`<option>${b}</option>`).join('');if(cur)sel.value=cur;showRep();}
+async function showRep(){const b=brgy.value;if(!b)return;const r=await fetch('/api/sitrep/'+encodeURIComponent(b));
+ sitrep=r.ok?await r.json():null;rep.textContent=sitrep?sitrep[lang]:'No reports.';}
+brgy.onchange=showRep;document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{lang=b.dataset.l;rep.textContent=sitrep?sitrep[lang]:''});
+f.onsubmit=async e=>{e.preventDefault();msg.textContent='…';const r=await fetch('/api/reports',{method:'POST',body:new FormData(f)});
+ const j=await r.json();msg.textContent=r.ok?`Saved: ~${j.depth_cm} cm (${j.band})`:('Error: '+j.detail);if(r.ok)load();};
+load();
+</script></body></html>
