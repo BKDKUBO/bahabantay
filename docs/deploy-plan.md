@@ -1,6 +1,6 @@
 # BahaBantay demo deploy plan (cost approval)
 
-**Status:** **DEPLOYED** 2026-10-27 (Asia/Manila) — live at https://bahabantay-466317436519.asia-southeast1.run.app (project `bahabantay-demo`, service `bahabantay`, region asia-southeast1, minScale 0, provider meta, \$5 budget).  
+**Status:** **DEPLOYED** 2026-10-27 (Asia/Manila) — live at https://bahabantay-466317436519.asia-southeast1.run.app (project `bahabantay-demo`, service `bahabantay`, region asia-southeast1, minScale 0, provider meta, $5 budget).  
 **Written:** 2026-10-27 (Asia/Manila). **Target window:** ~2 weeks through Meta submission **2026-11-05 09:00 Asia/Manila**.  
 **Repo:** private [BKDKUBO/bahabantay](https://github.com/BKDKUBO/bahabantay).
 
