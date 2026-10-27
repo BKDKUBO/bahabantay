@@ -13,7 +13,17 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/pytest -q                        # tests
 .venv/bin/python scripts/eval_depth.py     # accuracy check -> docs/eval/results.md
 ```
-Env vars: `BAHABANTAY_PROVIDER=mock|meta` (default mock), `BAHABANTAY_DB`, `BAHABANTAY_UPLOADS`.
+Env vars: `BAHABANTAY_PROVIDER=mock|meta` (default mock), `BAHABANTAY_DB`, `BAHABANTAY_UPLOADS`,
+`META_API_KEY` / `MODEL_API_KEY` (Meta Model API; never commit), `BAHABANTAY_META_FALLBACK=true|false` (default true — fall back to mock on Meta errors).
+Optional project `.env` (gitignored) is loaded automatically.
+
+To use Meta SAM 3.1 + Muse Spark:
+```bash
+export META_API_KEY="…"   # or MODEL_API_KEY
+export BAHABANTAY_PROVIDER=meta
+.venv/bin/uvicorn app.main:app --port 8765
+# live SAM smoke: .venv/bin/python scripts/smoke_meta_sam.py
+```
 
 ## Features
 - **Photo → depth:** segment water + reference object (person, door, car tire, jeepney, curb) → depth in cm, level, confidence.
@@ -35,15 +45,15 @@ app/agent.py       agent tools, language detection, follow-up questions
 app/depth.py       pipeline: provider.segment() -> waterline vs reference-object height -> depth cm, band, confidence
 app/aggregate.py   per-street rollup (latest depth, trend cm/h, passability, people-at-risk)
 app/db.py          SQLite storage
-app/providers/     base.py (Vision/Report/Agent interfaces)  mock.py (deterministic)  meta.py (stubs: SAM 3.1 segment +
-                   video/multi-frame tracking, Muse Spark agent + sitrep; all raise NotImplementedError)
+app/providers/     base.py (Vision/Report/Agent interfaces)  mock.py (deterministic)  meta.py (SAM 3.1 segment +
+                   per-frame tracking, Muse Spark agent + sitrep; mock fallback on failure)
 scripts/           seed.py, make_eval_set.py, eval_depth.py
 ```
 Depth bands: can't tell (no reference / low confidence), none <3 cm, ankle <20, knee <55, waist <110, chest 110+. Passability: all <25 cm, trucks <60, boats 60+.
 
 ## Mock vs Meta provider
-- **mock**: fake masks derived from a hash of the image bytes, so the same photo always gives the same depth. Reports come from fixed EN/FIL templates and say so.
-- **meta**: `MetaVision.segment` (SAM 3.1), `MetaVision.track_frames` (SAM 3.1 video tracking), `MetaAgent.run` (Muse Spark tool loop) and `MetaReports.situation_report` (Muse Spark) raise `NotImplementedError` with TODOs. The API returns HTTP 501 if selected. Keys must come from env vars, never committed.
+- **mock**: fake masks derived from a hash of the image bytes, so the same photo always gives the same depth. Reports come from fixed EN/FIL templates and say so. Default for pytest / offline demos.
+- **meta**: `MetaVision.segment` calls SAM 3.1 (`sam-3.1` via `POST /v1/responses`, one noun phrase per request, image as data URL). `MetaVision.track_frames` segments each frame. `MetaAgent.run` asks Muse Spark (`muse-spark-1.3`) for a JSON tool plan then runs `Tools` methods. `MetaReports.situation_report` drafts a BDRRMO bulletin with Muse (no SIMULATED/MOCK wording). On API/network/parse failure (or missing key), falls back to mock when `BAHABANTAY_META_FALLBACK` is true (default). Keys from env / `.env` only — never committed.
 
 ## 10-day build plan (Oct 26 – Nov 4, 2026)
 | Day | Date | Work |

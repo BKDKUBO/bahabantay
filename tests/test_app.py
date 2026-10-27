@@ -57,11 +57,26 @@ def test_mock_is_deterministic():
     v = MockVision(); assert v.segment(b"p", ["water", "person"]) == v.segment(b"p", ["water", "person"])
 
 
-def test_meta_stubs_raise():
+def test_meta_constructs_and_has_name():
     v, r, a = get_providers("meta")
-    for f in (lambda: v.segment(b"x", ["water"]), lambda: v.track_frames([b"x"], ["water"]),
-              lambda: r.situation_report({}, "en"), lambda: a.run({}, None)):
-        with pytest.raises(NotImplementedError): f()
+    assert v.name == "meta" and r.name == "meta" and a.name == "meta"
+
+
+def test_parse_sam_boxes():
+    from app.providers.meta import parse_sam_output_text
+    sample = (
+        "<0f>0<|box;x1=353;y1=382;x2=453;y2=427;w=537;h=561;c=0.9|>"
+        "<|mask;x=0;y=0;data=46,101,~...|>,"
+        "1<|box;x1=260;y1=382;x2=340;y2=427;w=537;h=561|>"
+        "<|mask;x=0;y=0;data=46,81,~...|>"
+    )
+    masks = parse_sam_output_text(sample, "person")
+    assert len(masks) == 2
+    assert masks[0].label == "person"
+    assert masks[0].bbox == pytest.approx((353 / 537, 382 / 561, 453 / 537, 427 / 561))
+    assert masks[0].score == pytest.approx(0.9)
+    assert masks[1].score == pytest.approx(0.85)  # default when c absent
+    assert parse_sam_output_text("", "water") == []
 
 
 # --- agent tools
@@ -141,9 +156,16 @@ def test_bad_coords(client):
     assert post(client, b"x", lat=200).status_code == 422
 
 
-def test_meta_provider_returns_501(tmp_path):
+def test_meta_provider_fallback_without_key(tmp_path, monkeypatch):
+    """Without a Meta key and with fallback on, meta provider uses mock — no 501."""
+    # Empty (not deleted) so load_dotenv will not refill from project .env
+    monkeypatch.setenv("META_API_KEY", "")
+    monkeypatch.setenv("MODEL_API_KEY", "")
+    monkeypatch.setenv("BAHABANTAY_META_FALLBACK", "true")
     c = TestClient(create_app(db_path=tmp_path / "m.db", provider="meta"))
-    assert post(c, b"x").status_code == 501
+    r = post(c, find_photo(False))
+    assert r.status_code == 201
+    assert r.json()["status"] in ("ok", "duplicate", "needs_info")
 
 
 # --- eval
