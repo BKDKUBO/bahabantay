@@ -115,6 +115,10 @@ def create_app(db_path=None, provider=None) -> FastAPI:
     @app.get("/")
     def index():
         return FileResponse(ROOT / "static" / "index.html")
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon():
+        return FileResponse(ROOT / "static" / "favicon.svg", media_type="image/svg+xml")
     app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
     app.state.conn = conn
     return app
