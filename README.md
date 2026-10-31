@@ -63,7 +63,7 @@ Depth bands: can't tell (no reference / low confidence), none <3 cm, ankle <20, 
 | 3 | Oct 28 | Calibrate reference heights on ~30 photos; confidence tuning |
 | 4 | Oct 29 | Muse Spark sitrep (EN/FIL) from street summary JSON |
 | 5 | Oct 30 | Agent tools: nearby_reports, flag_people_at_risk, dedupe |
-| 6 | Oct 31 | Responder Q&A ("Saan pwedeng dumaan ang truck?"); hourly bulletin |
+| 6 | Oct 31 | ✅ (branch `day6-responder-qa`, `POST /api/ask`) Responder Q&A ("Saan pwedeng dumaan ang truck?"); hourly bulletin |
 | 7 | Nov 1 | Mobile-first upload, GPS capture, image resize, rate limit |
 | 8 | Nov 2 | Native Filipino review of templates/prompts; eval set; bug fixes |
 | 9 | Nov 3 | Demo deploy (only after approval); record video |

@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .base import Mask, Segmentation
 from .mock import MockAgent, MockReports, MockVision
+from .. import qa
 
 log = logging.getLogger("bahabantay.meta")
 
@@ -259,6 +260,33 @@ class MetaReports:
                 raise
             log.warning("MetaReports.situation_report failed (%s); falling back to MockReports", e)
             return MockReports().situation_report(summary, lang)
+
+
+    def answer(self, summary: dict, question: str, lang: str) -> dict:
+        """Muse Spark phrases the answer, grounded on the deterministic facts."""
+        lang = "fil" if lang == "fil" else "en"
+        facts = qa.answer(summary, question, lang)
+        try:
+            client = get_client()
+            developer = (
+                "You answer flood responders' questions for a BDRRMO. Use ONLY the street summary JSON "
+                "and the grounded draft answer. Never invent streets, depths or people. Keep it to 2-3 short "
+                "sentences, plain text, in " + ("Filipino" if lang == "fil" else "English") + ". "
+                "End by reminding them to confirm on the ground. Do not mention SIMULATED, MOCK, or AI."
+            )
+            text = _muse_chat(client, [
+                {"role": "developer", "content": developer},
+                {"role": "user", "content": json.dumps({"question": question, "summary": summary,
+                                                         "grounded_draft": facts["answer"]}, ensure_ascii=False, default=str)},
+            ])
+            if not text:
+                raise RuntimeError("empty Muse answer")
+            return {**facts, "answer": text, "provider": self.name}
+        except Exception as e:
+            if not _fallback_enabled():
+                raise
+            log.warning("MetaReports.answer failed (%s); falling back to grounded template", e)
+            return {**facts, "provider": "mock"}
 
 
 class MetaAgent:

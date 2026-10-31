@@ -20,6 +20,12 @@ class Answer(BaseModel):
     submerged_pct: float    # how much of the object is under water, 0..100
 
 
+class Question(BaseModel):
+    barangay: str
+    question: str
+    lang: str = ""          # "fil" | "en"; detected from the question when empty
+
+
 def create_app(db_path=None, provider=None) -> FastAPI:
     app = FastAPI(title="BahaBantay", version="0.2.0")
     conn = db.connect(db_path)
@@ -108,6 +114,15 @@ def create_app(db_path=None, provider=None) -> FastAPI:
                     "en": reporter.situation_report(s, "en"), "fil": reporter.situation_report(s, "fil"), "summary": s}
         except NotImplementedError as e:
             raise HTTPException(501, str(e))
+
+    @app.post("/api/ask")
+    def ask(q: Question):
+        text = q.question.strip()
+        if not text or len(text) > 300:
+            raise HTTPException(422, "question must be 1-300 characters")
+        s = summarize(all_reports(), q.barangay)
+        lang = q.lang if q.lang in ("fil", "en") else detect_lang(text)
+        return {"barangay": q.barangay, "question": text, "lang": lang, **reporter.answer(s, text, lang)}
 
     app.mount("/uploads", StaticFiles(directory=UPLOADS), name="uploads")
     app.mount("/samples", StaticFiles(directory=ROOT / "sample_data" / "images"), name="samples")

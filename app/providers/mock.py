@@ -6,6 +6,7 @@ always gives the same result (good for tests and demos).
 from __future__ import annotations
 import hashlib
 from .base import Mask, Segmentation
+from .. import qa
 
 BAND_TEXT = {
     "en": {"ankle": "ankle-deep", "knee": "knee-deep", "waist": "waist-deep", "chest": "chest-deep or higher", "none": "no flooding"},
@@ -56,6 +57,9 @@ class MockAgent:
 
 class MockReports:
     name = "mock"
+
+    def answer(self, summary: dict, question: str, lang: str) -> dict:
+        return {**qa.answer(summary, question, lang), "provider": self.name}
 
     def situation_report(self, summary: dict, lang: str) -> str:
         lang = "fil" if lang == "fil" else "en"

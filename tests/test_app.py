@@ -176,3 +176,37 @@ def test_eval_runs_on_simulated_set(tmp_path):
     res = eval_depth.evaluate(items)
     assert res["cant_tell"] == 4 and res["mae_cm"] < 15
     out = tmp_path / "r.md"; eval_depth.write_md(res, "x", out); assert "SIMULATED" in out.read_text()
+
+
+# --- responder Q&A
+def test_ask_truck_route_filipino(client):
+    r = client.post("/api/ask", json={"barangay": "Tumana", "question": "Saan pwedeng dumaan ang truck?"})
+    assert r.status_code == 200
+    j = r.json()
+    assert j["lang"] == "fil" and j["intent"] == "truck"
+    assert "Bayabas St" not in j["streets"] and j["streets"]  # boats-only street excluded
+    assert "kumpirmahin" in j["answer"]
+
+
+def test_ask_rising_and_risk_english(client):
+    j = client.post("/api/ask", json={"barangay": "Tumana", "question": "Which streets are rising?", "lang": "en"}).json()
+    assert j["intent"] == "rising" and j["streets"] == ["Bayabas St"]
+    j = client.post("/api/ask", json={"barangay": "Tumana", "question": "Anyone needing rescue?", "lang": "en"}).json()
+    assert j["intent"] == "risk" and "Bayabas St" in j["streets"]
+
+
+def test_ask_unknown_barangay_and_bad_input(client):
+    j = client.post("/api/ask", json={"barangay": "Nowhere", "question": "where can a car pass?"}).json()
+    assert j["streets"] == [] and "No usable reports" in j["answer"]
+    assert client.post("/api/ask", json={"barangay": "Tumana", "question": "  "}).status_code == 422
+
+
+def test_meta_answer_falls_back_on_api_error(monkeypatch):
+    from app.providers import meta
+    from app.providers.meta import MetaReports
+    def no_client(): raise RuntimeError("no key in tests")
+    monkeypatch.setattr(meta, "get_client", no_client)
+    s = {"barangay": "X", "streets": [{"street": "A St", "latest_depth_cm": 10, "passability": "all", "trend": "unknown",
+         "rate_cm_per_h": None, "trend_arrow": "", "people_at_risk": False}], "needs_info": 0}
+    out = MetaReports().answer(s, "where can a car pass?", "en")
+    assert out["provider"] == "mock" and out["streets"] == ["A St"]

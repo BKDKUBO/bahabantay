@@ -33,6 +33,9 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:8px;font-size:12px}.tabs but
 <select id="brgy"></select>
 <div class="tabs"><button data-l="fil">Filipino</button><button data-l="en">English</button></div>
 <table id="streets"></table><pre id="rep">Select a barangay.</pre>
+<h3>Ask / Magtanong</h3>
+<form id="askf"><input id="askq" maxlength="300" placeholder="Saan pwedeng dumaan ang truck?"> <button>Ask</button></form>
+<div id="ans" class="q" style="display:none"></div>
 </aside>
 <script>
 const COLORS={none:'#2e7d32',ankle:'#9ccc65',knee:'#fbc02d',waist:'#ef6c00',chest:'#c62828',cant_tell:'#777'};
@@ -67,5 +70,8 @@ async function showRep(){const b=brgy.value;if(!b)return;const r=await fetch('/a
 brgy.onchange=showRep;document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{lang=b.dataset.l;rep.textContent=sitrep?sitrep[lang]:''});
 f.onsubmit=async e=>{e.preventDefault();msg.textContent='…';const r=await fetch('/api/reports',{method:'POST',body:new FormData(f)});
  const j=await r.json();msg.innerHTML=!r.ok?('Error: '+j.detail):j.status=='needs_info'?answerForm(j):`Saved: ~${j.depth_cm} cm (${j.band})${j.duplicate_of?' — merged with #'+j.duplicate_of:''}`;if(r.ok)load();};
+askf.onsubmit=async e=>{e.preventDefault();if(!brgy.value||!askq.value.trim())return;ans.style.display='block';ans.textContent='…';
+ const r=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({barangay:brgy.value,question:askq.value})});
+ const j=await r.json();ans.textContent=r.ok?j.answer:('Error: '+j.detail);};
 load();
 </script></body></html>

@@ -32,6 +32,7 @@ class VisionProvider(Protocol):
 class ReportProvider(Protocol):
     name: str
     def situation_report(self, summary: dict, lang: str) -> str: ...
+    def answer(self, summary: dict, question: str, lang: str) -> dict: ...
 
 
 class AgentProvider(Protocol):
