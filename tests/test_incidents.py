@@ -151,3 +151,8 @@ def test_meta_extract_parses_model_json(monkeypatch):
     e = meta.MetaReports().extract("rumaragasa ang tubig", {})
     assert e == {"hazards": ["strong_current"], "people_at_risk": True, "water_level": "waist", "rising": "yes",
                  "summary_en": None, "confidence": 0.8, "source": "meta"}
+
+
+def test_index_has_no_hardcoded_mock_banner(client):
+    html = client.get("/").text
+    assert "mock vision/report provider" not in html and "SIMULATED" not in html and "/api/health" in html
