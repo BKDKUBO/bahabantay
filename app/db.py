@@ -8,9 +8,14 @@ SCHEMA = """CREATE TABLE IF NOT EXISTS reports(
  lat REAL NOT NULL, lng REAL NOT NULL, barangay TEXT NOT NULL, street TEXT NOT NULL,
  note TEXT, lang TEXT DEFAULT 'en', image_path TEXT, depth_cm INTEGER, band TEXT, confidence REAL,
  reference TEXT, reason TEXT, masks TEXT, people_at_risk INTEGER DEFAULT 0, simulated INTEGER DEFAULT 0,
- status TEXT DEFAULT 'ok', question TEXT, duplicate_of INTEGER, provider TEXT)"""
+ status TEXT DEFAULT 'ok', question TEXT, duplicate_of INTEGER, provider TEXT,
+ water_level TEXT, rising TEXT, kind TEXT DEFAULT 'flood', loc_source TEXT, assessment TEXT)"""
+EXTRA = {"water_level": "TEXT", "rising": "TEXT", "kind": "TEXT DEFAULT 'flood'", "loc_source": "TEXT", "assessment": "TEXT"}
+SIDE = ["CREATE TABLE IF NOT EXISTS votes(id INTEGER PRIMARY KEY AUTOINCREMENT, incident_id INTEGER NOT NULL, vote TEXT NOT NULL, at TEXT NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY AUTOINCREMENT, incident_id INTEGER NOT NULL, action TEXT NOT NULL, note TEXT, at TEXT NOT NULL)"]
 COLS = ["reported_at", "lat", "lng", "barangay", "street", "note", "lang", "image_path", "depth_cm", "band", "confidence",
-        "reference", "reason", "masks", "people_at_risk", "simulated", "status", "question", "duplicate_of", "provider"]
+        "reference", "reason", "masks", "people_at_risk", "simulated", "status", "question", "duplicate_of", "provider",
+        "water_level", "rising", "kind", "loc_source", "assessment"]
 
 
 def connect(path=None):
@@ -19,16 +24,23 @@ def connect(path=None):
     have = [r[1] for r in c.execute("PRAGMA table_info(reports)")]
     if have and "reported_at" not in have:   # old v0.1 schema: local demo data only, rebuild
         c.execute("DROP TABLE reports")
-    c.execute(SCHEMA); return c
+    c.execute(SCHEMA)
+    have = [r[1] for r in c.execute("PRAGMA table_info(reports)")]
+    for col, typ in EXTRA.items():
+        if col not in have: c.execute(f"ALTER TABLE reports ADD COLUMN {col} {typ}")
+    for q in SIDE: c.execute(q)
+    c.commit(); return c
 
 
 def insert(c, rec: dict) -> int:
     rec = {**rec, "masks": json.dumps(rec.get("masks", [])), "people_at_risk": int(bool(rec.get("people_at_risk"))),
-           "simulated": int(bool(rec.get("simulated")))}
+           "simulated": int(bool(rec.get("simulated"))),
+           "assessment": json.dumps(rec.get("assessment") or {}), "kind": rec.get("kind") or "flood"}
     cur = c.execute(f"INSERT INTO reports({','.join(COLS)}) VALUES({','.join('?' * len(COLS))})", [rec.get(k) for k in COLS])
     c.commit(); return cur.lastrowid
 
 
 def row(r):
     d = dict(r); d["masks"] = json.loads(d["masks"] or "[]")
-    d["people_at_risk"] = bool(d["people_at_risk"]); d["simulated"] = bool(d["simulated"]); return d
+    d["people_at_risk"] = bool(d["people_at_risk"]); d["simulated"] = bool(d["simulated"])
+    d["assessment"] = json.loads(d.get("assessment") or "{}"); d["kind"] = d.get("kind") or "flood"; return d

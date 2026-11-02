@@ -35,7 +35,7 @@ class MockVision:
         waterline = bottom - frac * (bottom - top)
         if "water" in prompts and frac > 0.02:
             masks.append(Mask("water", (0.0, waterline, 1.0, 1.0), 0.75 + (h[3] % 25) / 100))
-        return Segmentation(masks)
+        return Segmentation(masks, source="mock")
 
     def track_frames(self, frames, prompts):
         return [self.segment(f, prompts) for f in frames]
@@ -58,13 +58,21 @@ class MockAgent:
 class MockReports:
     name = "mock"
 
+    def extract(self, note: str, est: dict) -> dict:
+        from .. import assess
+        return {**assess.extract_text(note), "source": "mock"}
+
+    def advisory(self, facts: dict) -> dict:
+        from .. import assess
+        return {**assess.advisory_template(facts), "provider": "mock"}
+
     def answer(self, summary: dict, question: str, lang: str) -> dict:
         return {**qa.answer(summary, question, lang), "provider": self.name}
 
     def situation_report(self, summary: dict, lang: str) -> str:
         lang = "fil" if lang == "fil" else "en"
-        head = {"en": f"FLOOD SITUATION REPORT — Barangay {summary['barangay']} (SIMULATED/MOCK)",
-                "fil": f"ULAT SA LAGAY NG BAHA — Barangay {summary['barangay']} (SIMULATED/MOCK)"}[lang]
+        head = {"en": f"FLOOD SITUATION REPORT — Barangay {summary['barangay']} (template)",
+                "fil": f"ULAT SA LAGAY NG BAHA — Barangay {summary['barangay']} (template)"}[lang]
         lines = [head, ""]
         for s in summary["streets"]:
             band = BAND_TEXT[lang][s["max_band"]]

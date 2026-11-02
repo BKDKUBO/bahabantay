@@ -1,4 +1,7 @@
-"""Load SIMULATED sample reports incl. time series (Marikina, flood-prone area). NOT real data.
+"""Load sample reports incl. time series (Marikina, flood-prone area). Synthetic, NOT real floods.
+
+Sample reports are labeled "Sample report" in the UI and are not analyzed by the live models;
+new photos submitted in the app are.
 
 Timestamps are relative to "now" so the 6-hour trend window always has data.
 """
@@ -11,6 +14,7 @@ sys.path.insert(0, str(ROOT))
 from app import db
 from app.agent import QUESTIONS, detect_lang
 from app.aggregate import note_flags_risk
+from app.assess import extract_text
 from app.depth import REF_HEIGHT_CM, band_for
 
 IMG = ROOT / "sample_data" / "images"
@@ -21,7 +25,7 @@ SAMPLES = [
  ("Tumana", "Bayabas St", 14.6578, 121.0993, 110, 85, "person", "Waist-deep near the chapel"),
  ("Tumana", "Bayabas St", 14.6580, 121.0995, 55, 105, "door", "Tumataas ang tubig"),
  ("Tumana", "Bayabas St", 14.6582, 121.0998, 10, 125, "door", "Stranded family on 2nd floor, need tulong"),
- ("Tumana", "Kamagong St", 14.6560, 121.1010, 40, 70, "jeepney", "Jeepneys stuck"),
+ ("Tumana", "Kamagong St", 14.6560, 121.1010, 40, 70, "jeepney", "Jeepneys stuck, may kable ng kuryente sa tubig"),
  ("Tumana", "Molave St", 14.6549, 121.0975, 35, 30, "car_tire", "Half the tire under water"),
  ("Tumana", "Ilang-Ilang St", 14.6593, 121.1025, 25, 8, "curb", "Curb barely covered"),
  ("Tumana", "Narra St", 14.6566, 121.0960, 15, None, None, "Baha na dito! Ang lalim"),         # needs info (FIL)
@@ -49,7 +53,7 @@ def placeholder(i, ref, depth_cm, path):
     else:
         wl = 150
     if depth_cm != 0: d.rectangle((0, wl, 480, 360), fill=(70, 110, 160))
-    d.text((10, 10), f"SIMULATED sample #{i+1} - placeholder image", fill="black")
+    d.text((10, 10), f"Sample report #{i+1} - placeholder image (synthetic)", fill="black")
     d.text((10, 26), f"~{depth_cm} cm" if depth_cm is not None else "no reference object", fill="black"); im.save(path, "JPEG")
 
 
@@ -57,19 +61,20 @@ def main(db_path=None, now=None):
     IMG.mkdir(parents=True, exist_ok=True)
     now = now or datetime.now(timezone.utc)
     c = db.connect(db_path)
-    c.execute("DELETE FROM reports WHERE simulated=1"); c.commit()
+    c.execute("DELETE FROM reports WHERE simulated=1"); c.execute("DELETE FROM votes"); c.execute("DELETE FROM reviews"); c.commit()
     for i, (b, s, lat, lng, ago, cm, ref, note) in enumerate(SAMPLES):
         name = f"sample_{i+1:02d}.jpg"; placeholder(i, ref, cm, IMG / name)
         lang = detect_lang(note)
         rec = {"reported_at": (now - timedelta(minutes=ago)).isoformat(timespec="seconds"), "lat": lat, "lng": lng,
-               "barangay": b, "street": s, "note": f"[SIMULATED] {note}".strip(), "lang": lang,
+               "barangay": b, "street": s, "note": note, "lang": lang,
                "image_path": f"/samples/{name}", "depth_cm": cm, "band": band_for(cm), "confidence": 0.9 if ref else 0.0,
                "reference": ref, "reason": None if ref else "no_reference",
                "masks": [{"label": ref, "bbox": [0.4, 0.3, 0.6, 0.9], "score": 0.9}] if ref else [],
-               "people_at_risk": note_flags_risk(note), "simulated": True, "provider": "simulated",
+               "people_at_risk": note_flags_risk(note) or extract_text(note)["people_at_risk"], "simulated": True, "provider": "sample", "kind": "flood", "loc_source": "map",
+               "assessment": {**extract_text(note), "source": "sample"},
                "status": "ok" if ref else "needs_info", "question": None if ref else QUESTIONS["no_reference"][lang]}
         db.insert(c, rec)
-    print(f"seeded {len(SAMPLES)} SIMULATED reports")
+    print(f"seeded {len(SAMPLES)} sample reports (synthetic)")
 
 
 if __name__ == "__main__":

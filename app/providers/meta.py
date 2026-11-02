@@ -19,6 +19,16 @@ from .. import qa
 
 log = logging.getLogger("bahabantay.meta")
 
+# Visible fallback accounting: /api/health reports these so the UI can say when mock answered.
+FALLBACKS = {"count": 0, "last": None}
+
+
+def _note_fallback(where: str, e: Exception) -> None:
+    from datetime import datetime, timezone
+    FALLBACKS["count"] += 1
+    FALLBACKS["last"] = {"where": where, "at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "error": type(e).__name__}
+    log.warning("%s failed (%s); falling back to mock", where, e)
+
 BASE_URL = "https://api.meta.ai/v1"
 SAM_MODEL = "sam-3.1"
 MUSE_MODEL = "muse-spark-1.3"
@@ -202,12 +212,12 @@ class MetaVision:
                 label = normalize_label(p)
                 text = _sam_one(client, url, phrase)
                 masks.extend(parse_sam_output_text(text, label))
-            return Segmentation(masks)
+            return Segmentation(masks, source="meta")
         except Exception as e:
             if not _fallback_enabled():
                 raise
-            log.warning("MetaVision.segment failed (%s); falling back to MockVision", e)
-            return MockVision().segment(image, prompts)
+            _note_fallback("SAM 3.1 segment", e)
+            seg = MockVision().segment(image, prompts); seg.source = "mock-fallback"; return seg
 
     def track_frames(self, frames: list[bytes], prompts: list[str]) -> list[Segmentation]:
         try:
@@ -258,7 +268,7 @@ class MetaReports:
         except Exception as e:
             if not _fallback_enabled():
                 raise
-            log.warning("MetaReports.situation_report failed (%s); falling back to MockReports", e)
+            _note_fallback("Muse Spark sitrep", e)
             return MockReports().situation_report(summary, lang)
 
 
@@ -285,8 +295,58 @@ class MetaReports:
         except Exception as e:
             if not _fallback_enabled():
                 raise
-            log.warning("MetaReports.answer failed (%s); falling back to grounded template", e)
+            _note_fallback("Muse Spark answer", e)
             return {**facts, "provider": "mock"}
+
+
+    def extract(self, note: str, est: dict) -> dict:
+        """Muse Spark reads a Filipino/English/Taglish note into fixed fields. Rules in app/assess.py run after."""
+        from .. import assess
+        if not (note or "").strip():
+            return {**assess.extract_text(note), "source": "none"}
+        try:
+            client = get_client()
+            developer = (
+                "You extract flood-report facts for barangay responders. The note may be Filipino, English or Taglish. "
+                "Reply with ONLY compact JSON: {\"hazards\": [subset of " + json.dumps(list(assess.HAZARDS)) + "], "
+                "\"people_at_risk\": true|false, \"water_level\": \"none\"|\"ankle\"|\"knee\"|\"waist\"|\"higher\"|null, "
+                "\"rising\": \"yes\"|\"no\"|null, \"summary_en\": \"<=15 words\", \"confidence\": 0..1}. "
+                "Only report what the note states; use null when not stated. Never invent a location."
+            )
+            raw = _muse_chat(client, [{"role": "developer", "content": developer},
+                                      {"role": "user", "content": json.dumps({"note": note, "photo_estimate": {k: est.get(k) for k in ("band", "depth_cm", "reference")}}, ensure_ascii=False)}])
+            return {**assess.clean_extraction(_parse_json_object(raw)), "source": "meta"}
+        except Exception as e:
+            if not _fallback_enabled():
+                raise
+            _note_fallback("Muse Spark extract", e)
+            return {**assess.extract_text(note), "source": "mock-fallback"}
+
+    def advisory(self, facts: dict) -> dict:
+        from .. import assess
+        base = assess.advisory_template(facts)
+        try:
+            client = get_client()
+            developer = (
+                "You write a short barangay flood advisory for residents. Use ONLY the facts JSON; never invent streets, "
+                "depths, numbers or orders. Reply ONLY JSON {\"en\": \"3-5 sentences\", \"fil\": \"same in Filipino\", "
+                "\"sms\": \"<=160 chars Filipino-English digest\"}. Say it is community-reported and to follow official "
+                "BDRRMO/PAGASA instructions."
+            )
+            raw = _muse_chat(client, [{"role": "developer", "content": developer},
+                                      {"role": "user", "content": json.dumps(facts, ensure_ascii=False, default=str)}])
+            j = _parse_json_object(raw)
+            en, fil, sms = str(j.get("en") or "").strip(), str(j.get("fil") or "").strip(), str(j.get("sms") or "").strip()
+            if not en or not fil:
+                raise ValueError("incomplete advisory")
+            if not sms or len(sms) > 160:
+                sms = base["sms"]
+            return {"en": en, "fil": fil, "sms": sms, "provider": "meta"}
+        except Exception as e:
+            if not _fallback_enabled():
+                raise
+            _note_fallback("Muse Spark advisory", e)
+            return {**base, "provider": "mock-fallback"}
 
 
 class MetaAgent:
@@ -298,8 +358,8 @@ class MetaAgent:
         except Exception as e:
             if not _fallback_enabled():
                 raise
-            log.warning("MetaAgent.run failed (%s); falling back to MockAgent", e)
-            return MockAgent().run(report, tools)
+            _note_fallback("Muse Spark triage", e)
+            return {**MockAgent().run(report, tools), "source": "mock-fallback"}
 
     def _run_muse(self, report: dict, tools) -> dict:
         client = get_client()
@@ -350,7 +410,7 @@ class MetaAgent:
         trace.append(("flag_people_at_risk", risk))
         q = tools.ask_followup(report) if run_followup else None
         trace.append(("ask_followup", q))
-        return {"duplicate_of": dup, "people_at_risk": risk, "followup": q, "trace": trace}
+        return {"duplicate_of": dup, "people_at_risk": risk, "followup": q, "trace": trace, "source": "meta"}
 
 
 def _parse_json_object(text: str) -> dict:

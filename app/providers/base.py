@@ -18,6 +18,7 @@ class Mask:
 @dataclass
 class Segmentation:
     masks: list[Mask] = field(default_factory=list)
+    source: str = ""    # provider that actually produced this: "meta", "mock", or "mock-fallback"
 
     def of(self, label: str) -> list[Mask]:
         return [m for m in self.masks if m.label == label]
@@ -33,6 +34,8 @@ class ReportProvider(Protocol):
     name: str
     def situation_report(self, summary: dict, lang: str) -> str: ...
     def answer(self, summary: dict, question: str, lang: str) -> dict: ...
+    def extract(self, note: str, est: dict) -> dict: ...
+    def advisory(self, facts: dict) -> dict: ...
 
 
 class AgentProvider(Protocol):
