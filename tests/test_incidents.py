@@ -156,3 +156,8 @@ def test_meta_extract_parses_model_json(monkeypatch):
 def test_index_has_no_hardcoded_mock_banner(client):
     html = client.get("/").text
     assert "mock vision/report provider" not in html and "SIMULATED" not in html and "/api/health" in html
+
+
+def test_live_wire_means_avoid_even_without_photo_depth():
+    a = A([rep(1, note="may kable ng kuryente sa tubig")])
+    assert a["action_label"] == "Avoid this area"

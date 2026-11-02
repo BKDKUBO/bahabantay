@@ -1,4 +1,4 @@
-import json, os, sqlite3
+import json, os, sqlite3, threading
 from pathlib import Path
 
 DB_PATH = Path(os.getenv("BAHABANTAY_DB", Path(__file__).resolve().parent.parent / "data" / "bahabantay.db"))
@@ -18,6 +18,23 @@ COLS = ["reported_at", "lat", "lng", "barangay", "street", "note", "lang", "imag
         "water_level", "rising", "kind", "loc_source", "assessment"]
 
 
+class _Rows(list):
+    lastrowid = None
+    def fetchone(self): return self[0] if self else None
+    def fetchall(self): return list(self)
+
+
+class Locked:
+    """One SQLite connection shared by FastAPI's threadpool. Every statement runs and is fully
+    fetched under a lock, so concurrent requests can't interleave cursors."""
+    def __init__(self, c): self._c, self._lock = c, threading.RLock()
+    def execute(self, sql, args=()):
+        with self._lock:
+            cur = self._c.execute(sql, args); out = _Rows(cur.fetchall()); out.lastrowid = cur.lastrowid; return out
+    def commit(self):
+        with self._lock: self._c.commit()
+
+
 def connect(path=None):
     p = Path(path or DB_PATH); p.parent.mkdir(parents=True, exist_ok=True)
     c = sqlite3.connect(p, check_same_thread=False); c.row_factory = sqlite3.Row
@@ -29,7 +46,7 @@ def connect(path=None):
     for col, typ in EXTRA.items():
         if col not in have: c.execute(f"ALTER TABLE reports ADD COLUMN {col} {typ}")
     for q in SIDE: c.execute(q)
-    c.commit(); return c
+    c.commit(); return Locked(c)
 
 
 def insert(c, rec: dict) -> int:

@@ -180,7 +180,9 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
     photo_conf = [r["confidence"] for r in rs if r.get("band") not in (None, "cant_tell") and r.get("confidence")]
     if photo_conf:
         conf = max(photo_conf)
-    elif lvl is not None or help_req:
+    elif lvl is not None:
+        conf = 0.6   # reporter tapped a level / described it; photo gave no usable estimate
+    elif help_req:
         conf = 0.5
     else:
         conf = None
@@ -194,6 +196,8 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
         action = "Needs confirmation"
     elif help_req or people:
         action = "Help may be needed"
+    elif {"live_wire", "strong_current"} & set(hz):   # electrical/current hazard: avoid even before depth is confirmed
+        action = "Avoid this area"
     elif conf is None or conf < MIN_CONF or lvl is None:
         action = "Needs confirmation"
     elif clear >= 2 and clear > still:
