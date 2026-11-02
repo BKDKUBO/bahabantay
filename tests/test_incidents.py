@@ -161,3 +161,9 @@ def test_index_has_no_hardcoded_mock_banner(client):
 def test_live_wire_means_avoid_even_without_photo_depth():
     a = A([rep(1, note="may kable ng kuryente sa tubig")])
     assert a["action_label"] == "Avoid this area"
+
+
+def test_report_eval_runs_on_mock(tmp_path):
+    from scripts import eval_reports
+    res = eval_reports.main([])
+    assert res["n"] >= 25 and 0 <= res["severity_agreement"] <= 1 and 0 <= res["group_pair_acc"] <= 1
