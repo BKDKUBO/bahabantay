@@ -9,42 +9,60 @@ Live demo: https://bahabantay-466317436519.asia-southeast1.run.app (append `#res
 > so there is something to look at. Sample reports are not run through the models. Every photo you submit in the app *is*
 > analyzed live by SAM 3.1 and Muse Spark; the header shows which provider is answering and says so if the offline fallback was used.
 
-| Resident home | Affected area as 250 m squares | Square details |
+| Home: status alert first | Summary + quick actions | Map: 250 m squares |
 |---|---|---|
-| ![Resident home, Malanday in Danger](docs/screenshots/01-resident-home.png) | ![Map squares with legend](docs/screenshots/02-map-squares.png) | ![Square popup](docs/screenshots/03-square-popup.png) |
-| **Nationwide search (Davao City)** | **Report: depth, trend, car passable** | **AI understood** |
-| ![Barangay in Davao City, outside coverage](docs/screenshots/04-outside-coverage-mindanao.png) | ![Report step](docs/screenshots/05-report-depth-trend-car.png) | ![AI understood card](docs/screenshots/06-ai-understood.png) |
+| ![Home with DANGER alert for Malanday, Marikina City](docs/screenshots/01-home-alert.png) | ![Summary cards and quick actions](docs/screenshots/02-home-summary-actions.png) | ![Map squares](docs/screenshots/03-map-squares.png) |
+| **Square details** | **Nearby reports (plain wording)** | **Nationwide search** |
+| ![Square popup](docs/screenshots/04-square-popup.png) | ![Nearby reports feed](docs/screenshots/05-nearby-reports.png) | ![Search with city/province subtitles](docs/screenshots/06-search-subtitles.png) |
+| **Outside coverage (Davao Oriental)** | **Report, step 3 of 3** | **AI suggests, you confirm** |
+| ![Barangay outside coverage](docs/screenshots/07-outside-coverage-mindanao.png) | ![Report depth step](docs/screenshots/08-report-step3-depth.png) | ![AI suggestion card](docs/screenshots/09-ai-suggests-confirm.png) |
+| **Help tab: 911, rescue, hotlines** | **Filipino** | **Dark theme** |
+| ![Help tab](docs/screenshots/10-help-hotlines.png) | ![Filipino home](docs/screenshots/16-filipino-home.png) | ![Dark home](docs/screenshots/14-dark-home.png) |
 
-| Responder Action Grid | Evidence drawer |
+| Responder tab (for barangay staff): Action Grid | Evidence drawer |
 |---|---|
-| ![Action Grid](docs/screenshots/07-responder-action-grid.png) | ![Evidence drawer](docs/screenshots/08-evidence-drawer.png) |
-| **Advisory (EN / FIL / SMS)** | **Emergency hotlines** |
-| ![Advisory and SMS](docs/screenshots/09-advisory-sms.png) | ![Hotlines card](docs/screenshots/10-hotlines.png) |
+| ![Action Grid](docs/screenshots/11-responder-action-grid.png) | ![Evidence drawer](docs/screenshots/12-evidence-drawer.png) |
+| **Advisory (EN / FIL / SMS)** | **Dark responder** |
+| ![Advisory and SMS](docs/screenshots/13-advisory-sms.png) | ![Dark responder](docs/screenshots/15-dark-responder.png) |
 
-| **Barangay search (subtitles, match count)** | **Dark theme: resident** | **Dark theme: responder** |
-| ![Search with city/province subtitles](docs/screenshots/04b-search-subtitles.png) | ![Dark resident view](docs/screenshots/11-dark-theme.png) | ![Dark responder grid](docs/screenshots/12-dark-responder.png) |
+`09-ai-suggests-confirm.png` was taken on a local build (no live writes); all others are from the live demo.
 
-More: [`04a-near-me-mindanao.png`](docs/screenshots/04a-near-me-mindanao.png) ("Near me" suggestions from GPS) ·
-[`04c-search-selected.png`](docs/screenshots/04c-search-selected.png) (selected-barangay chip).
+## UX: alert → decision → action
+- **Home opens on one question, "What should I do right now?"** A full-width alert for the selected barangay
+  (e.g. *DANGER: Deep flooding reported in Malanday, Marikina City* · *Avoid travel. Move to higher ground if water is rising.*
+  · *Updated 12 min ago*), then two big buttons: **Get help / Humingi ng tulong** and **Check my area / Tingnan ang lugar**.
+- **Summary cards** (flood level, trend, last verified, reports nearby) and **See N nearby reports**; detailed cards live on the Map tab.
+- **Bottom tabs:** Home · Map · Report · Help · **Responder (for barangay staff)**. The responder tab is open in the demo (no login)
+  so judges can reach the Action Grid, evidence drawer and advisory generator.
+- **Floating red 911 button** on every resident screen.
+- **Four severity levels** (Safe / Watch / Danger / No data) with icons and words, not color alone; help requests get a dark-red
+  **CALL FOR HELP** style.
+- **Plain wording for residents** ("Verified by nearby reports", "Likely accurate"); the AI confidence % and method sit under
+  **Details** and **How we verify reports**. The *Live AI: Meta SAM 3.1 + Muse Spark* banner stays in the header.
+- **EN / FIL toggle** (remembered); urgent buttons always show both languages.
+- **Every street is shown with barangay and city** (and province outside Metro Manila), e.g. *M. H. del Pilar St, Malanday,
+  Marikina City*, since the same street name exists in other cities. Reports only group into one incident within the same
+  barangay (PSGC code), so same-named streets in different cities never merge.
+- Light and dark themes; mobile-first, fine on desktop.
 
 ## The loop
 **Report → AI understands → Resident confirms → Alert → Help**
 
-1. **Resident ("Pulse") view**, mobile-first: pick any barangay in the Philippines (search, or **📡 Near me** from GPS);
-   area status *Safe / Watch / Danger / No data* with report count and freshness; four big actions (*Report flood, Check my area,
-   I need help, Help someone*); nearby incident cards with "reported N min ago"; tap-to-call hotlines; map below.
+1. **Home tab**, mobile-first: pick any barangay in the Philippines (search, or **📡 Near me** from GPS); status alert
+   *Safe / Watch / Danger / No data* with one plain action and freshness; *Get help* and *Check my area*; summary cards.
+   **Map tab**: 250 m squares and nearby incident cards with "reported N min ago" and voting. **Help tab**: 911, rescue request, hotlines.
 2. **Report flood**: photo → street/landmark (GPS, map tap, or barangay center marked approximate) → water level
-   (Ankle/Knee/Waist/Higher), optional **depth in cm**, **trend** (rising / steady / going down / not sure), **can a car pass?**,
+   (Ankle/Knee/Waist/Above waist), shown as *Step 1 of 3*,, optional **depth in cm**, **trend** (rising / steady / going down / not sure), **can a car pass?**,
    optional note (browser speech-to-text available; that part is the browser, not Meta).
 3. Progress screen while **SAM 3.1** segments the photo and **Muse Spark** reads the note.
-4. **"AI understood" card**: what the photo said vs. what the reporter entered, hazards found, with sources. The reporter
+4. **"AI suggests knee-deep — confirm or correct" card**: what the photo said vs. what the reporter entered, hazards found, with sources. The reporter
    can correct the level, then confirms. Nothing is published before that.
 5. **Action card**: what we detected / what to do now / how to help, labeled *AI estimate, verify locally; not an official order*,
    plus **Share alert** (short Filipino-English text for Messenger/Facebook/SMS).
 6. Neighbors tap **Still flooded / Already clear / Not sure**; a **No longer flooded** majority (≥2 votes) marks a flood *Safe to pass*.
    Help requests can't be cleared by votes.
-7. **I need help** sends a high-priority request straight into the responder queue (exact location shown to responders only).
-8. **Responder view, Action Grid**: incidents ranked *Critical / Needs verification / Monitor* with the reason;
+7. **Get help** sends a high-priority request straight into the responder queue (exact location shown to responders only).
+8. **Responder tab (for barangay staff), Action Grid**: incidents ranked *Critical / Needs verification / Monitor* with the reason;
    evidence drawer (reports, photos, AI detections, votes, responder actions, timestamps, confidence, recommendation);
    **Confirm / Reject / Request more info / Escalate**; advisory generator (English, Filipino, ≤160-char SMS); Q&A.
    "Avoid this area" incidents never sit in Monitor.
