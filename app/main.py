@@ -164,6 +164,13 @@ def create_app(db_path=None, provider=None) -> FastAPI:
         if len(q.strip()) < 2: return []
         return geo.search(q, max(1, min(limit, 20)))
 
+    @app.get("/api/barangays/find")
+    def barangay_find(q: str = "", limit: int = 20):
+        """Search with total count, for the autocomplete UI ('20 of 143 matches')."""
+        if len(q.strip()) < 2: return {"q": q, "total": 0, "items": []}
+        total, items = geo.search_full(q, max(1, min(limit, 20)))
+        return {"q": q, "total": total, "items": items}
+
     @app.get("/api/barangays/nearest")
     def barangay_nearest(lat: float, lng: float):
         if not (-90 <= lat <= 90 and -180 <= lng <= 180): raise HTTPException(422, "invalid coordinates")

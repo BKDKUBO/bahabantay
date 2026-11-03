@@ -13,6 +13,12 @@ from pathlib import Path
 
 DATA = Path(__file__).resolve().parent / "geo" / "barangays.csv.gz"
 COVERED_CITIES = {"City of Marikina"}   # responder coverage for the demo
+PRIORITY_CITIES = {"Marikina City", "Quezon City"}   # ranked first on ties (demo area)
+
+
+def short_region(r: str) -> str:
+    """'Region XI (Davao Region)' -> 'Davao Region'; 'National Capital Region (NCR)' -> 'NCR'."""
+    return r[r.rfind("(") + 1:-1] if r.endswith(")") and "(" in r else r
 
 
 def norm(s: str) -> str:
@@ -36,14 +42,14 @@ def _load():
             covered = r["city"] in COVERED_CITIES
             label = r["name"] if covered else ", ".join(x for x in (r["name"], short_city(r["city"]), prov) if x)
             rows.append({"code": r["code"], "name": r["name"], "city": short_city(r["city"]), "province": prov,
-                         "region": r["region"], "lat": float(r["lat"]) if r["lat"] else None,
+                         "region": short_region(r["region"]), "lat": float(r["lat"]) if r["lat"] else None,
                          "lng": float(r["lng"]) if r["lng"] else None, "approx": r["approx"] == "1",
                          "covered": covered, "label": label})
     seen = {}
     for r in rows:   # labels must be unique: append the PSGC code on the rare collision
         if r["label"] in seen: r["label"] += f" ({r['code']})"
         seen[r["label"]] = r
-    keys = [(norm(r["name"]), norm(f"{r['name']} {r['city']} {r['province']}")) for r in rows]
+    keys = [(norm(r["name"]), norm(f"{r['city']} {r['province']} {r['region']}").split()) for r in rows]
     return rows, seen, keys
 
 
@@ -59,22 +65,37 @@ def resolve(label: str) -> dict | None:
 
 
 def public(r: dict, dist_km: float | None = None) -> dict:
-    out = {k: r[k] for k in ("code", "label", "name", "city", "province", "lat", "lng", "approx", "covered")}
+    out = {k: r[k] for k in ("code", "label", "name", "city", "province", "region", "lat", "lng", "approx", "covered")}
     if dist_km is not None: out["distance_km"] = round(dist_km, 2)
     return out
 
 
-def search(q: str, limit: int = 10) -> list[dict]:
+def search_full(q: str, limit: int = 10) -> tuple[int, list[dict]]:
+    """Token search. Every query token must prefix a word of the barangay name or of its
+    city/province/region, so 'san isidro cebu' or 'poblacion, davao' narrow by place.
+    Ranking: exact name match > name starts with query > other; then Marikina/QC; then
+    more tokens on the name (fewer spent on place), exact place-word hits, shorter name.
+    Returns (total matches, top `limit`)."""
     toks = norm(q).split()
-    if not toks: return []
+    if not toks: return 0, []
     rows, _, keys = _load(); hits = []
-    for r, (nm, full) in zip(rows, keys):
-        words = full.split()
-        if all(any(w.startswith(t) for w in words) for t in toks):
-            score = (0 if nm == " ".join(toks) else 1 if nm.startswith(toks[0]) else 2, not r["covered"], len(nm), r["label"])
-            hits.append((score, r))
+    for r, (nm, loc) in zip(rows, keys):
+        nw = nm.split(); name_t, loc_exact, ok = [], 0, True
+        for t in toks:
+            if any(w.startswith(t) for w in nw): name_t.append(t)
+            elif any(w.startswith(t) for w in loc): loc_exact += t in loc
+            else: ok = False; break
+        if not ok or not name_t: continue          # at least one token must hit the barangay name
+        nq = " ".join(name_t)
+        tier = 0 if nm == nq else 1 if nm.startswith(nq) else 2
+        score = (tier, r["city"] not in PRIORITY_CITIES, -len(name_t), -loc_exact, len(nm), r["label"])
+        hits.append((score, r))
     hits.sort(key=lambda h: h[0])
-    return [public(r) for _, r in hits[:limit]]
+    return len(hits), [public(r) for _, r in hits[:limit]]
+
+
+def search(q: str, limit: int = 10) -> list[dict]:
+    return search_full(q, limit)[1]
 
 
 def km(a_lat, a_lng, b_lat, b_lng):

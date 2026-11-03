@@ -68,6 +68,12 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
 .lg{display:inline-block;width:14px;height:12px;margin:0 4px 0 8px;vertical-align:-1px;border:2px solid #c62828}.lg.obs{background:#c62828aa}.lg.unc{background:#c6282833;border-style:dashed}.lg.sta{background:#8a94a344;border-color:#8a94a3}
 .bwrap{display:flex;gap:8px;align-items:center}.bwrap input{flex:1}.cov{background:#fff3bf;color:#5c3c00;border-radius:12px;padding:10px;font-size:14px;margin:6px 0}
 @media(max-width:760px){.grid{grid-template-columns:1fr}}
+.acw{position:relative;flex:1;min-width:0}.acl{position:absolute;left:0;right:0;top:100%;z-index:1100;background:#fff;border:2px solid #c9d3e0;border-radius:12px;margin-top:4px;max-height:60vh;overflow:auto;box-shadow:0 6px 18px #0b254533;list-style:none;padding:4px 0}
+.acl li{padding:10px 12px;min-height:48px;cursor:pointer;border-bottom:1px solid #eef2f7}.acl li:last-child{border-bottom:0}.acl li.on,.acl li:hover{background:var(--sky)}
+.acl li b{display:block}.acl li small{color:var(--mut);display:block;font-size:13px}.acl mark{background:#ffe08a;color:inherit;padding:0}
+.acl .note{cursor:default;color:var(--mut);font-size:14px;min-height:0;background:#fafbfd}.acl .note:hover{background:#fafbfd}.acl .err{color:var(--red)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #c9d3e0;border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes sp{to{transform:rotate(360deg)}}
+.chip{display:inline-flex;align-items:center;gap:8px;background:#e6f4ea;border:1px solid #7cc39a;color:#0b5a2f;border-radius:999px;padding:6px 6px 6px 12px;margin:6px 0;font-size:14px}.chip button{border:0;background:#fff;border-radius:999px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer;min-height:36px}
 </style></head><body>
 <header><div class="hrow"><h1>🌊 BahaBantay</h1>
 <div class="mode" role="tablist"><button id="mRes" class="on" onclick="setMode('res')">Resident</button><button id="mResp" onclick="setMode('resp')">Responder</button></div></div>
@@ -76,7 +82,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
 <!-- RESIDENT -->
 <section id="res" class="wrap">
  <label for="brgy" style="margin-top:4px">My barangay <span class="src">· search any barangay in the Philippines</span></label>
- <div class="bwrap"><input id="brgy" list="brgyL" autocomplete="off" placeholder="Type a barangay, e.g. Tumana or Poblacion Davao"><datalist id="brgyL"></datalist>
+ <div class="bwrap"><input id="brgy" autocomplete="off" placeholder="Type a barangay, e.g. Tumana or Poblacion Davao">
  <button class="btn sm" onclick="nearMe('brgy')" title="Suggest the nearest barangay from my location">📡 Near me</button></div>
  <div id="brgySug" class="src"></div>
  <div id="area" class="area watch"><div class="ic">…</div><div><b>Loading</b><small></small></div></div>
@@ -136,7 +142,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
   <button class="btn sm" style="margin-top:8px" onclick="samplePhoto()">Use a sample photo (demo)</button>
   <img id="photoPrev" alt="photo preview"><button class="btn pri full" onclick="go(2)">Next</button></div>
  <div id="s2" class="hide"><h2>2 · Where is it?</h2>
-  <label>Barangay</label><input id="fBrgy" list="fBrgyL" autocomplete="off" placeholder="Search barangay"><datalist id="fBrgyL"></datalist><div id="fBrgySug" class="src"></div>
+  <label>Barangay</label><input id="fBrgy" autocomplete="off" placeholder="Search barangay"><div id="fBrgySug" class="src"></div>
   <label>Street or landmark</label><input id="fStreet" placeholder="e.g. Bayabas St near the chapel">
   <div class="row"><button class="btn sm" onclick="gps()">📡 Use my location</button><span class="src" id="locMsg">Or tap the map. If you skip, we use the barangay area (approximate).</span></div>
   <div id="pickmap" style="margin-top:8px"></div><button class="btn pri full" onclick="go(3)">Next</button></div>
@@ -164,7 +170,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
 <!-- HELP FLOW -->
 <div class="sheet" id="hsheet"><header><button class="x" onclick="closeSheet('hsheet')" aria-label="Close">✕</button><b>🆘 I need help / Kailangan ko ng tulong</b></header>
 <main class="wrap"><div class="note" style="background:#ffe3e3;color:#7a1010">If life is in danger, call <b>911</b> or your barangay now. This request goes to the responder queue; it is not a guaranteed rescue.</div>
- <div id="hForm"><label>Barangay</label><input id="hBrgy" list="hBrgyL" autocomplete="off" placeholder="Search barangay"><datalist id="hBrgyL"></datalist><div id="hBrgySug" class="src"></div><label>Street or landmark</label><input id="hStreet" placeholder="e.g. M. H. del Pilar St, blue gate">
+ <div id="hForm"><label>Barangay</label><input id="hBrgy" autocomplete="off" placeholder="Search barangay"><div id="hBrgySug" class="src"></div><label>Street or landmark</label><input id="hStreet" placeholder="e.g. M. H. del Pilar St, blue gate">
  <label>What do you need? (who, how many)</label><textarea id="hNote" rows="3" placeholder="Hal. 3 kami, may lola na hindi makalakad, nasa 2nd floor"></textarea>
  <div class="row"><button class="btn sm" onclick="gps('h')">📡 Share my location</button><span class="src" id="hLoc">Optional. Exact location is shown to responders only.</span></div>
  <button class="btn full" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="sendHelp()">Send help request</button></div>
@@ -203,20 +209,47 @@ const map=L.map('map').setView([14.657,121.101],14);L.tileLayer('https://{s}.til
 const layer=L.layerGroup().addTo(map);const COL={safe:'#0f8b8d',caution:'#f59f00',avoid:'#e8590c',confirm:'#7a8699',help:'#c62828'};
 const BM={};let active=[];
 async function meta(label){if(BM[label])return BM[label];try{BM[label]=await J('/api/barangays/resolve?label='+encodeURIComponent(label))}catch{BM[label]=null}return BM[label]}
-function fillList(id,items){$(id+'L').innerHTML=items.map(b=>`<option value="${esc(b.label||b)}">${b.label?esc(b.city+(b.covered?' · responder coverage':'')):'active reports'}</option>`).join('')}
-function brgyBox(id,onPick){const el=$(id);let t=null,last=el.value;
- el.addEventListener('focus',()=>{if(!el.value)fillList(id,active)});
- el.addEventListener('input',()=>{clearTimeout(t);const q=el.value.trim();if(BM[q]!==undefined&&BM[q]){last=q;onPick&&onPick(q);return}
-  t=setTimeout(async()=>{if(q.length<2){fillList(id,active);return}const hits=await J('/api/barangays/search?q='+encodeURIComponent(q));hits.forEach(h=>BM[h.label]=h);fillList(id,hits)},200)});
- el.addEventListener('change',async()=>{const q=el.value.trim();if(q&&q!==last&&(active.includes(q)||await meta(q))){last=q;onPick&&onPick(q)}})}
+function hl(text,toks){let out=esc(text);toks.filter(t=>t.length>0).sort((a,b)=>b.length-a.length).forEach(t=>{const re=new RegExp('(^|[^A-Za-z0-9>])('+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');out=out.replace(re,'$1<mark>$2</mark>')});return out}
+function qtoks(q){return q.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[,.()\-'\/]/g,' ').split(/\s+/).filter(w=>w&&!['brgy','bgy','barangay','city','of'].includes(w))}
+function subOf(b){return b.label?[b.city,b.province].filter(Boolean).join(', ')+(b.region?' · '+b.region:''):'Has active reports'}
+function setChip(id,label){const c=$(id+'Chip');if(!c)return;if(!label){c.innerHTML='';return}const b=BM[label];
+ c.innerHTML=`<span class="chip"><span>✅ Selected: <b>${esc(b&&b.name?'Brgy '+b.name:label)}</b>${b&&b.city?', '+esc([b.city,b.province].filter(Boolean).join(', ')):''}</span><button type="button" onclick="changeB('${id}')">Change</button></span>`}
+function changeB(id){const el=$(id);el.value='';setChip(id,'');el.focus();el.dispatchEvent(new Event('focus'))}
+function brgyBox(id,onPick){const el=$(id);let t=null,seq=0,items=[],on=-1;
+ const w=document.createElement('div');w.className='acw';el.parentNode.insertBefore(w,el);w.appendChild(el);
+ const ul=document.createElement('ul');ul.className='acl';ul.id=id+'List';ul.setAttribute('role','listbox');ul.hidden=true;w.appendChild(ul);
+ el.setAttribute('role','combobox');el.setAttribute('aria-autocomplete','list');el.setAttribute('aria-controls',ul.id);el.setAttribute('aria-expanded','false');
+ const chip=document.createElement('div');chip.id=id+'Chip';w.parentNode.insertBefore(chip,w.nextSibling);
+ const show=(html)=>{ul.innerHTML=html;ul.hidden=!html;el.setAttribute('aria-expanded',String(!!html))};
+ const render=(list,toks,head,foot)=>{items=list;on=-1;show((head||'')+list.map((b,i)=>`<li role="option" data-i="${i}"><b>${hl(b.name||b.label||b,toks)}</b><small>${hl(subOf(b),toks)}${b.covered?' · responder coverage':''}${b.distance_km!=null?' · '+b.distance_km+' km away':''}</small></li>`).join('')+(foot||''))};
+ const choose=(i)=>{const b=items[i];if(!b)return;const label=b.label||b;if(b.label)BM[label]=b;el.value=label;show('');setChip(id,label);onPick&&onPick(label)};
+ const suggest=()=>{const near=JSON.parse(localStorage.getItem('bbNear')||'[]');near.forEach(h=>BM[h.label]=h);
+  const act=active.filter(a=>!near.some(n=>n.label==a));
+  render([...near,...act],[],near.length?'<li class="note">📡 Suggested near you (from your last “Near me”)</li>':act.length?'<li class="note">Barangays with active reports. Type to search any barangay.</li>':'')};
+ el.addEventListener('focus',()=>{if(!el.value.trim())suggest()});
+ el.addEventListener('input',()=>{clearTimeout(t);setChip(id,'');const q=el.value.trim();if(q.length<2){suggest();return}
+  show(`<li class="note"><span class="spin"></span>Searching “${esc(q)}”…</li>`);const my=++seq;
+  t=setTimeout(async()=>{try{const r=await J('/api/barangays/find?q='+encodeURIComponent(q));if(my!==seq)return;
+    if(!r.items.length){items=[];show(`<li class="note">No barangay matches “${esc(q)}” — try the city or province, e.g. “san isidro cebu”.</li>`);return}
+    const head=`<li class="note">${r.total>r.items.length?`${r.items.length} of ${r.total} matches — add a city or province to narrow`:`${r.total} match${r.total>1?'es':''}`}</li>`;
+    render(r.items,qtoks(q),head)}catch(e){if(my===seq){items=[];show('<li class="note err">⚠️ Search failed. Check your connection and try again.</li>')}}},250)});
+ el.addEventListener('keydown',e=>{const lis=[...ul.querySelectorAll('li[data-i]')];
+  if(e.key=='ArrowDown'||e.key=='ArrowUp'){if(ul.hidden){el.value.trim()?el.dispatchEvent(new Event('input')):suggest();return}e.preventDefault();if(!lis.length)return;on=(on+(e.key=='ArrowDown'?1:-1)+lis.length)%lis.length;
+   lis.forEach((li,i)=>li.classList.toggle('on',i==on));lis[on].scrollIntoView({block:'nearest'});el.setAttribute('aria-activedescendant','')}
+  else if(e.key=='Enter'){if(!ul.hidden&&items.length){e.preventDefault();choose(on<0?0:on)}}
+  else if(e.key=='Escape'){show('')}});
+ ul.addEventListener('mousedown',e=>e.preventDefault());
+ ul.addEventListener('click',e=>{const li=e.target.closest('li[data-i]');if(li)choose(+li.dataset.i)});
+ el.addEventListener('blur',()=>setTimeout(()=>show(''),150));
+ if(el.value)setChip(id,el.value)}
 async function nearMe(id){if(!navigator.geolocation){toast('Location not available');return}$(id+'Sug').textContent='Finding your barangay…';
- navigator.geolocation.getCurrentPosition(async p=>{const n=await J(`/api/barangays/nearest?lat=${p.coords.latitude}&lng=${p.coords.longitude}`);n.forEach(h=>BM[h.label]=h);
+ navigator.geolocation.getCurrentPosition(async p=>{const n=await J(`/api/barangays/nearest?lat=${p.coords.latitude}&lng=${p.coords.longitude}`);n.forEach(h=>BM[h.label]=h);try{localStorage.setItem('bbNear',JSON.stringify(n))}catch{}
   $(id+'Sug').innerHTML=n.length?'Nearest: '+n.map(h=>`<a href="#" onclick="pickB('${id}',${esc(JSON.stringify(h.label))});return false">${esc(h.label)}</a> (${h.distance_km} km)`).join(' · ')+' <i>(estimate from barangay centers, please confirm)</i>':'No barangay found near you.';
   if(id!='brgy'&&pick)setPick(p.coords.latitude,p.coords.longitude,'gps')},()=>{$(id+'Sug').textContent='Could not get location'})}
-function pickB(id,label){$(id).value=label;$(id+'Sug').textContent='';if(id=='brgy')refresh();else centerPick(label)}
+function pickB(id,label){$(id).value=label;$(id+'Sug').textContent='';setChip(id,label);if(id=='brgy')refresh();else centerPick(label)}
 async function centerPick(label){const m=await meta(label);if(m&&m.lat!=null&&pick&&!pickAt)pick.setView([m.lat,m.lng],15)}
 async function loadBrgys(){const bs=await J('/api/barangays');active=bs;if(!$('brgy').value)$('brgy').value=bs.includes('Malanday')?'Malanday':(bs[0]||'');
- brgyBox('brgy',()=>refresh());brgyBox('fBrgy',centerPick);brgyBox('hBrgy');
+ brgyBox('brgy',()=>refresh());($('brgy').value?meta($('brgy').value):Promise.resolve()).then(()=>setChip('brgy',$('brgy').value));brgyBox('fBrgy',centerPick);brgyBox('hBrgy');
  $('rbrgy').innerHTML='<option value="">All barangays</option>'+bs.map(b=>`<option>${esc(b)}</option>`).join('')}
 function card(i,opts={}){const [ic,k]=ACT[i.action_label];const step=LADDER.findIndex(l=>l[0]==i.ladder);
  return `<div class="card a-${k}" ${opts.click?`onclick="openDrawer(${i.id})"`:''}><div class="top"><div><div class="tag t-${k}">${ic} ${i.action_label.toUpperCase()}</div>
@@ -248,7 +281,7 @@ function helpSomeone(){$('nearH').textContent='Help verify: tap what you see';$(
  $('cards').innerHTML=[...incs].sort((a,b)=>(b.action_label=='Needs confirmation')-(a.action_label=='Needs confirmation')).filter(i=>i.kind!='help').map(i=>card(i,{vote:1})).join('')}
 // ---------- report flow
 function openReport(){photoBlob=null;draft=null;lvl=rise=car='';$('fCm').value='';$('photo').value='';$('photoPrev').style.display='none';$('fNote').value='';$('fStreet').value='';
- $('fBrgy').value=$('brgy').value;document.querySelectorAll('#lvl button,#rise button,#car button').forEach(b=>b.classList.remove('on'));go(1);$('rsheet').classList.add('on');
+ $('fBrgy').value=$('brgy').value;setChip('fBrgy',$('brgy').value);document.querySelectorAll('#lvl button,#rise button,#car button').forEach(b=>b.classList.remove('on'));go(1);$('rsheet').classList.add('on');
  setTimeout(()=>{if(!pick){pick=L.map('pickmap').setView([14.657,121.101],15);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pick);
   pick.on('click',e=>setPick(e.latlng.lat,e.latlng.lng,'map'))}pick.invalidateSize();if(pickM){pickM.remove();pickM=null}centerPick($('fBrgy').value)},50);pickAt=null}
 let pickAt=null,pickM=null,hLoc=null;function setPick(lat,lng,src){pickAt={lat,lng,src};if(pickM)pickM.remove();pickM=L.marker([lat,lng]).addTo(pick);$('locMsg').textContent=src=='gps'?'📍 Using your location':'📍 Pin set on map'}
@@ -284,7 +317,7 @@ let rec=null;if(window.SpeechRecognition||window.webkitSpeechRecognition)$('mic'
 function dictate(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;rec=new R();rec.lang='fil-PH';rec.interimResults=false;
  rec.onresult=e=>{$('fNote').value=($('fNote').value+' '+e.results[0][0].transcript).trim()};rec.onerror=()=>toast('Speech not available');rec.start();toast('Listening… (browser speech-to-text)')}
 // ---------- help
-function openHelp(){$('hBrgy').value=$('brgy').value;$('hForm').classList.remove('hide');$('hDone').classList.add('hide');hLoc=null;$('hsheet').classList.add('on')}
+function openHelp(){$('hBrgy').value=$('brgy').value;setChip('hBrgy',$('brgy').value);$('hForm').classList.remove('hide');$('hDone').classList.add('hide');hLoc=null;$('hsheet').classList.add('on')}
 async function sendHelp(){if(!$('hStreet').value.trim()){toast('Type a street or landmark');return}
  try{const r=await post('/api/help',{barangay:$('hBrgy').value,street:$('hStreet').value,note:$('hNote').value,client_id:CID,lat:hLoc?.latitude??null,lng:hLoc?.longitude??null});
  $('hForm').classList.add('hide');$('hDone').classList.remove('hide');$('hDone').innerHTML=`<b>✓ Request #${r.id} is at the top of the responder queue.</b><p>Stay where it is safe and keep your phone on. If water keeps rising, go to a higher floor. Call 911 if life is in danger.</p><button class="btn full" onclick="closeSheet('hsheet')">OK</button>`;refresh()}catch(e){toast('Error: '+e.message)}}

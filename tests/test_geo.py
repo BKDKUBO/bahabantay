@@ -39,3 +39,29 @@ def test_outside_coverage_report_and_help(client):
     h = client.post("/api/help", json={"barangay": "Poblacion, Banaybanay, Davao Oriental", "street": "Rizal St"})
     assert h.status_code == 201 and h.json()["incident"]["approximate"] and h.json()["incident"]["covered"] is False
     assert client.get("/api/incidents", params={"barangay": "Malanday"}).json()[0]["covered"] is True
+
+
+def test_find_counts_and_disambiguates(client):
+    r = client.get("/api/barangays/find", params={"q": "san isidro"}).json()
+    assert r["total"] > 100 and len(r["items"]) == 20
+    assert r["items"][0]["city"] == "Quezon City"                       # Marikina/QC first
+    assert all(h["name"] == "San Isidro" for h in r["items"][:5])        # exact name before "San Isidro Norte"
+    provs = {h["province"] for h in r["items"]}
+    assert len(provs) >= 5 and all(h["region"] and h["city"] for h in r["items"])
+    assert len({h["label"] for h in r["items"]}) == len(r["items"])     # same name, distinct labels
+
+
+def test_qualifying_tokens_narrow(client):
+    cebu = client.get("/api/barangays/find", params={"q": "san isidro, cebu"}).json()
+    assert 0 < cebu["total"] < 20 and all("Cebu" in h["city"] + h["province"] for h in cebu["items"][:6])
+    dav = client.get("/api/barangays/find", params={"q": "poblacion davao"}).json()
+    assert dav["items"] and all("Davao" in (h["city"] + h["province"]) for h in dav["items"])
+    assert all(h["name"].lower().startswith("poblacion") for h in dav["items"][:3])
+    # a place word alone never lists a whole province: the name must match
+    assert client.get("/api/barangays/find", params={"q": "cebu"}).json()["total"] < 50
+
+
+def test_find_empty_and_short(client):
+    assert client.get("/api/barangays/find", params={"q": "zzqxw"}).json() == {"q": "zzqxw", "total": 0, "items": []}
+    assert client.get("/api/barangays/find", params={"q": "a"}).json()["items"] == []
+    assert geo.short_region("Region XI (Davao Region)") == "Davao Region"
