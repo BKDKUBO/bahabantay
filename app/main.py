@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from . import assess, db, depth, geo
+from . import assess, cells, db, depth, geo
 from .agent import Tools, detect_lang
 from .aggregate import summarize
 from .providers import get_providers
@@ -41,6 +41,7 @@ class HelpRequest(BaseModel):
     note: str = ""
     lat: float | None = None
     lng: float | None = None
+    client_id: str = ""
 
 
 class Question(BaseModel):
@@ -55,7 +56,23 @@ def create_app(db_path=None, provider=None) -> FastAPI:
     vision, reporter, agent = get_providers(provider)
     UPLOADS.mkdir(parents=True, exist_ok=True)
 
+    DEMO_CLOCK = os.getenv("BAHABANTAY_DEMO_CLOCK", "1") == "1"
+
+    def demo_clock():
+        """Keep the synthetic sample reports 'live' on a long-running instance: once the seed is
+        >30 min old, shift every sample report forward by the elapsed time (relative ages are kept)."""
+        if not DEMO_CLOCK: return
+        r = conn.execute("SELECT v FROM meta WHERE k='seeded_at'").fetchone()
+        if not r: return
+        seeded = datetime.fromisoformat(r["v"]); delta = now() - seeded
+        if delta.total_seconds() < 1800: return
+        for x in conn.execute("SELECT id, reported_at FROM reports WHERE simulated=1"):
+            t = datetime.fromisoformat(x["reported_at"]) + delta
+            conn.execute("UPDATE reports SET reported_at=? WHERE id=?", (t.isoformat(timespec="seconds"), x["id"]))
+        conn.execute("UPDATE meta SET v=? WHERE k='seeded_at'", (now().isoformat(timespec="seconds"),)); conn.commit()
+
     def all_reports():
+        demo_clock()
         return [db.row(r) for r in conn.execute("SELECT * FROM reports WHERE status!='draft' ORDER BY reported_at, id")]
 
     def now():
@@ -96,6 +113,12 @@ def create_app(db_path=None, provider=None) -> FastAPI:
         out.sort(key=lambda i: (-i["priority_score"], i["updated_min_ago"]))
         return out
 
+    def client_key(cid):
+        """Anonymous per-browser id, hashed so the stored value can't be linked back to the raw id."""
+        import hashlib
+        cid = (cid or "").strip()[:64]
+        return hashlib.sha256(("bb:" + cid).encode()).hexdigest()[:16] if cid else None
+
     def covered(label):
         r = geo.resolve(label); return bool(r and r["covered"])
 
@@ -105,6 +128,18 @@ def create_app(db_path=None, provider=None) -> FastAPI:
         if not r: return label.strip(), None, lat, lng, None
         if (lat is None or lng is None) and r["lat"] is not None: return r["label"], r["code"], r["lat"], r["lng"], "barangay"
         return r["label"], r["code"], lat, lng, None
+
+    @app.get("/api/cells")
+    def cell_map(barangay: str | None = None, view: str = "public"):
+        if view not in ("public", "responder"): raise HTTPException(422, "view must be public or responder")
+        reps = all_reports(); groups = assess.group(reps); votes = side("votes"); reviews = side("reviews")
+        vbr = {root: {k: sum(v["vote"] == k for v in vs) for k in ("still", "clear", "unsure", "gone")} for root, vs in votes.items()}
+        confirmed = {r["id"] for root, rs in groups.items() if (reviews.get(root) or [{}])[-1].get("action") == "confirm" for r in rs}
+        rejected = {r["id"] for root, rs in groups.items() if (reviews.get(root) or [{}])[-1].get("action") == "reject" for r in rs}
+        reps = [r for r in reps if r["id"] not in rejected]
+        out = cells.build(reps, now(), vbr, confirmed, responder=(view == "responder"))
+        if barangay: out = [c for c in out if barangay in c["barangays"]]
+        return {"cell_m": cells.CELL_M, "half_life_min": cells.HALF_LIFE_MIN, "expire_h": cells.EXPIRE_H, "cells": out}
 
     @app.get("/api/barangays/search")
     def barangay_search(q: str = "", limit: int = 8):
@@ -161,7 +196,8 @@ def create_app(db_path=None, provider=None) -> FastAPI:
     async def create_report(photo: UploadFile = File(...), lat: float = Form(...), lng: float = Form(...),
                             barangay: str = Form(...), street: str = Form(...), note: str = Form(""),
                             lang: str = Form(""), water_level: str = Form(""), rising: str = Form(""),
-                            loc_source: str = Form("map"), draft: bool = Form(False)):
+                            loc_source: str = Form("map"), draft: bool = Form(False),
+                            client_id: str = Form("")):
         if not (-90 <= lat <= 90 and -180 <= lng <= 180):
             raise HTTPException(422, "invalid coordinates")
         if not barangay.strip() or not street.strip():
@@ -182,7 +218,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
         (UPLOADS / name).write_bytes(data)
         bname, code, _, _, _ = place(barangay)
         rec = {**est, "reported_at": now().isoformat(timespec="seconds"), "lat": lat, "lng": lng,
-               "barangay": bname, "psgc_code": code, "street": street.strip(), "note": note,
+               "barangay": bname, "psgc_code": code, "client_id": client_key(client_id), "street": street.strip(), "note": note,
                "lang": lang if lang in ("fil", "en") else detect_lang(note), "image_path": f"/uploads/{name}",
                "provider": seg.source or vision.name, "water_level": water_level if water_level in assess.LEVELS else None,
                "rising": rising if rising in ("yes", "no", "unsure") else None, "kind": "flood",
@@ -228,7 +264,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
             if not known: raise HTTPException(422, "location needed for a new barangay")
             lat = sum(r["lat"] for r in known) / len(known); lng = sum(r["lng"] for r in known) / len(known); src = "barangay"
         ext = reporter.extract(h.note, {})
-        rec = {"reported_at": now().isoformat(timespec="seconds"), "lat": lat, "lng": lng, "barangay": bname, "psgc_code": code,
+        rec = {"reported_at": now().isoformat(timespec="seconds"), "lat": lat, "lng": lng, "barangay": bname, "psgc_code": code, "client_id": client_key(h.client_id),
                "street": h.street.strip(), "note": h.note, "lang": detect_lang(h.note), "depth_cm": None, "band": "cant_tell",
                "confidence": None, "people_at_risk": True, "kind": "help", "status": "help", "provider": "resident",
                "loc_source": src, "assessment": {**ext, "people_at_risk": True}}
@@ -286,7 +322,8 @@ def create_app(db_path=None, provider=None) -> FastAPI:
 
     @app.get("/api/reports")
     def list_reports(barangay: str | None = None, status: str | None = None):
-        return [r for r in all_reports() if (not barangay or r["barangay"] == barangay) and (not status or r["status"] == status)]
+        return [{k: v for k, v in r.items() if k != "client_id"} for r in all_reports()
+                if (not barangay or r["barangay"] == barangay) and (not status or r["status"] == status)]
 
     @app.get("/api/reports/{rid}/nearby")
     def nearby(rid: int, radius_m: float = 100):

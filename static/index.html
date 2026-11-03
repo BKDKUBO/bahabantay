@@ -65,6 +65,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 16px;border-radius:12px;z-index:3000;display:none;max-width:90%}
 .thumbs img{width:110px;border-radius:8px;margin:4px 4px 0 0}
 .hide{display:none!important}
+.lg{display:inline-block;width:14px;height:12px;margin:0 4px 0 8px;vertical-align:-1px;border:2px solid #c62828}.lg.obs{background:#c62828aa}.lg.unc{background:#c6282833;border-style:dashed}.lg.sta{background:#8a94a344;border-color:#8a94a3}
 .bwrap{display:flex;gap:8px;align-items:center}.bwrap input{flex:1}.cov{background:#fff3bf;color:#5c3c00;border-radius:12px;padding:10px;font-size:14px;margin:6px 0}
 @media(max-width:760px){.grid{grid-template-columns:1fr}}
 </style></head><body>
@@ -103,7 +104,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
   <a href="tel:+63289284396">QCDRRMO <span>(02) 8928-4396</span></a>
   <a href="tel:+639478859929">QC Emergency Operations Center <span>0947-885-9929</span></a>
   <p class="src">Numbers from marikina.gov.ph and quezoncity.gov.ph, checked Nov 3, 2026.</p></div>
- <h2>Map</h2><div id="map"></div>
+ <h2>Map</h2><div id="map"></div><div id="legend" class="src"></div>
  <p class="src">Public view shows approximate locations only (≈100 m). Community reports, not official orders. In an emergency call 911 or your BDRRMO.</p>
 </section>
 <!-- RESPONDER -->
@@ -183,6 +184,7 @@ const DO={"Safe to pass":"Reported passable. Conditions change fast, so go caref
 const LADDER=[["user_reported","User reported"],["ai_grouped","AI grouped"],["community_corroborated","Community corroborated"],["responder_verified","Responder verified"]];
 const LVL={none:'No water',ankle:'Ankle-deep',knee:'Knee-deep',waist:'Waist-deep',higher:'Above waist'};
 const PROV={meta:'Meta AI (SAM 3.1)','mock-fallback':'Offline estimator — Meta unavailable',mock:'Offline estimator',sample:'Sample data',resident:'Resident'};
+const CID=localStorage.bbcid||(localStorage.bbcid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)));
 let health=null,mode='res',incs=[],shareTxt='',photoBlob=null,pick=null,draft=null,lvl='',rise='',lvl2='';
 const ago=m=>m==null?'':m<1?'just now':m<60?`${m} min ago`:`${Math.floor(m/60)} h ${m%60} min ago`;
 function toast(t){toast.el=$('toast');toast.el.textContent=t;toast.el.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>toast.el.style.display='none',3200)}
@@ -226,9 +228,14 @@ async function refresh(){const b=$('brgy').value;const [a,list]=await Promise.al
  $('area').className='area '+a.status;$('area').innerHTML=`<div class="ic">${IC[a.status]}</div><div style="flex:1"><b>${NM[a.status]} · ${esc(b)}</b><small>${esc(a.text)}<br>${a.reports} report${a.reports==1?'':'s'} · ${a.incidents} incident${a.incidents==1?'':'s'}${a.updated_min_ago!=null?' · updated '+ago(a.updated_min_ago):''}</small></div><div class="pulse"></div>`;
  const m=await meta(b);$('cards').innerHTML=(m&&!m.covered?`<div class="cov">📍 <b>${esc(b)}</b> is outside BahaBantay responder coverage (demo covers Marikina). You can still report and read reports here, but no BahaBantay responder team will act on them. In an emergency call <a href="tel:911">911</a>.</div>`:'')+
  (list.length?list.map(i=>card(i,{vote:1})).join(''):'<p class="meta">No active reports here yet. Be the first to report.</p>');
- layer.clearLayers();list.forEach(i=>{const k=ACT[i.action_label][1];L.circleMarker([i.lat,i.lng],{radius:10+Math.min(8,i.reports*2),color:'#0b2545',weight:2,fillColor:COL[k],fillOpacity:.85})
-  .bindPopup(`<b>${esc(i.street)}</b><br>${ACT[i.action_label][0]} ${i.action_label}<br>${i.level?LVL[i.level]:'Depth unknown'} · ${i.reports} report(s)`).addTo(layer)});
- if(list.length)map.fitBounds(L.latLngBounds(list.map(i=>[i.lat,i.lng])).pad(.4),{maxZoom:16});else if(m&&m.lat!=null)map.setView([m.lat,m.lng],15);}
+ const cm=await J('/api/cells?barangay='+encodeURIComponent(b));layer.clearLayers();
+ cm.cells.forEach(c=>{const col=c.state=='stale'?'#8a94a3':LCOL[c.level]||'#7a8699';
+  L.rectangle(c.bounds,{color:c.people_at_risk&&c.state!='stale'?'#c62828':col,weight:c.state=='observed'?2:2,dashArray:c.state=='unconfirmed'?'6 5':null,
+   fillColor:col,fillOpacity:c.state=='observed'?.6:c.state=='unconfirmed'?.25:.18}).bindPopup(cellPop(c)).addTo(layer)});
+ $('legend').innerHTML=`<span class="lg obs"></span>Observed & confirmed <span class="lg unc"></span>Single report / unconfirmed <span class="lg sta"></span>Old or weak data · ${Math.round(cm.cell_m)} m squares, reports fade by half every ${cm.half_life_min} min and expire after ${cm.expire_h} h. Blank = no data, not “no flood”.`;
+ if(cm.cells.length)map.fitBounds(L.latLngBounds(cm.cells.flatMap(c=>c.bounds)).pad(.3),{maxZoom:16});else if(m&&m.lat!=null)map.setView([m.lat,m.lng],15);}
+const LCOL={none:'#0f8b8d',ankle:'#f59f00',knee:'#e8590c',waist:'#c62828',higher:'#7b1010'};
+function cellPop(c){return `<b>${{observed:'Observed & confirmed',unconfirmed:'Unconfirmed (single reporter)',stale:'Old or weak data'}[c.state]}</b><br>${c.level?LVL[c.level]:'Depth unknown'}${c.depth_cm_weighted!=null?` (~${c.depth_cm_weighted} cm)`:''}${c.people_at_risk?'<br>🆘 people may need help':''}<br>🕒 last observed ${ago(c.last_observed_min_ago)}<br>Confidence ${Math.round(c.confidence*100)}% · ${c.reports} report${c.reports>1?'s':''} from ${c.independent_reporters} reporter${c.independent_reporters>1?'s':''}<br><span class="src">${c.streets.map(esc).join(', ')}${c.sample?' · sample data':''}</span><br><span class="src">Shown as a ~250 m square to protect reporters' exact location.</span>`}
 async function vote(id,v){const r=await post(`/api/incidents/${id}/vote`,{vote:v});toast('Thanks. Your update helps nearby residents make safer decisions.');refresh()}
 async function checkArea(){$('nearH').scrollIntoView({behavior:'smooth'});const btn=$('checkBtn');if(btn.disabled)return;btn.disabled=true;
  $('advResSrc').textContent='';$('advResText').innerHTML='<span class="spin"></span>Writing the advisory from current reports. This can take up to 40 seconds…';
@@ -253,7 +260,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function brgyCenter(b){if(BM[b]&&BM[b].lat!=null&&!(incs.length&&$('brgy').value==b))return{lat:BM[b].lat,lng:BM[b].lng};const pts=incs.length&&$('brgy').value==b?incs:[];return pts.length?{lat:pts.reduce((s,i)=>s+i.lat,0)/pts.length,lng:pts.reduce((s,i)=>s+i.lng,0)/pts.length}:{lat:14.657,lng:121.101}}
 async function analyze(){go(4);['p1','p2','p3','p4'].forEach(p=>$(p).className='');$('p1').className='done';$('p2').className='run';
  const loc=pickAt||{...brgyCenter($('fBrgy').value),src:'barangay'};const fd=new FormData();fd.append('photo',photoBlob);
- Object.entries({lat:loc.lat,lng:loc.lng,loc_source:loc.src,barangay:$('fBrgy').value,street:$('fStreet').value,note:$('fNote').value,water_level:lvl,rising:rise,draft:'true'}).forEach(([k,v])=>fd.append(k,v));
+ Object.entries({lat:loc.lat,lng:loc.lng,loc_source:loc.src,client_id:CID,barangay:$('fBrgy').value,street:$('fStreet').value,note:$('fNote').value,water_level:lvl,rising:rise,draft:'true'}).forEach(([k,v])=>fd.append(k,v));
  const t=setTimeout(()=>{$('p2').className='done';$('p3').className='run'},2500);
  try{draft=await J('/api/reports',{method:'POST',body:fd})}catch(e){clearTimeout(t);toast('Error: '+e.message);go(3);return}
  clearTimeout(t);$('p2').className='done';$('p3').className='done';$('p4').className='run';await sleep(500);$('p4').className='done';await sleep(300);showUnderstood()}
@@ -276,7 +283,7 @@ function dictate(){const R=window.SpeechRecognition||window.webkitSpeechRecognit
 // ---------- help
 function openHelp(){$('hBrgy').value=$('brgy').value;$('hForm').classList.remove('hide');$('hDone').classList.add('hide');hLoc=null;$('hsheet').classList.add('on')}
 async function sendHelp(){if(!$('hStreet').value.trim()){toast('Type a street or landmark');return}
- try{const r=await post('/api/help',{barangay:$('hBrgy').value,street:$('hStreet').value,note:$('hNote').value,lat:hLoc?.latitude??null,lng:hLoc?.longitude??null});
+ try{const r=await post('/api/help',{barangay:$('hBrgy').value,street:$('hStreet').value,note:$('hNote').value,client_id:CID,lat:hLoc?.latitude??null,lng:hLoc?.longitude??null});
  $('hForm').classList.add('hide');$('hDone').classList.remove('hide');$('hDone').innerHTML=`<b>✓ Request #${r.id} is at the top of the responder queue.</b><p>Stay where it is safe and keep your phone on. If water keeps rising, go to a higher floor. Call 911 if life is in danger.</p><button class="btn full" onclick="closeSheet('hsheet')">OK</button>`;refresh()}catch(e){toast('Error: '+e.message)}}
 function closeSheet(id){$(id).classList.remove('on')}
 // ---------- responder

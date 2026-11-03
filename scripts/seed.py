@@ -74,6 +74,7 @@ def main(db_path=None, now=None):
                "assessment": {**extract_text(note), "source": "sample"},
                "status": "ok" if ref else "needs_info", "question": None if ref else QUESTIONS["no_reference"][lang]}
         db.insert(c, rec)
+    c.execute("INSERT OR REPLACE INTO meta(k,v) VALUES('seeded_at',?)", (now.isoformat(timespec="seconds"),)); c.commit()
     print(f"seeded {len(SAMPLES)} sample reports (synthetic)")
 
 

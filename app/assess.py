@@ -37,7 +37,7 @@ LEVEL_WORDS = [("higher", ("dibdib", "chest", "leeg", "neck", "bubong", "roof", 
 NEGATIONS = ("hindi na", "no longer", "wala nang", "wala ng")
 ACTIONS = ["Safe to pass", "Use caution", "Avoid this area", "Needs confirmation", "Help may be needed"]
 SEVERITY_RANK = {"unknown": 0, "low": 1, "moderate": 2, "high": 3, "critical": 4}
-ACTIVE_H = 12
+ACTIVE_H = float(__import__('os').getenv('BAHABANTAY_EXPIRE_H', 6))   # reports expire after a few hours
 DUP_RADIUS_M, DUP_WINDOW_MIN = 60, 45
 INCIDENT_GAP_MIN = 90
 MIN_CONF = 0.55
@@ -174,7 +174,8 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
         lvl, lvl_src = next(((l, s) for l, s in reversed(lv_pairs) if l), (None, None))
     rising = any(r.get("rising") == "yes" or (r.get("assessment") or {}).get("rising") == "yes" for r in rs) or "rising_fast" in hz
     sev = "critical" if help_req else severity(lvl, hz, people)
-    lad = ladder(len(rs), votes, reviews)
+    indep = len({(f"c:{r['client_id']}" if r.get('client_id') else f"r:{r['id']}") for r in rs})   # same device = one reporter
+    lad = ladder(indep, votes, reviews)
     last_action = reviews[-1]["action"] if reviews else None
     # confidence
     photo_conf = [r["confidence"] for r in rs if r.get("band") not in (None, "cant_tell") and r.get("confidence")]
@@ -187,7 +188,7 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
     else:
         conf = None
     if conf is not None:
-        conf += 0.1 * min(3, len(rs) - 1) + 0.05 * votes.get("still", 0) - 0.1 * votes.get("clear", 0)
+        conf += 0.1 * min(3, indep - 1) + 0.05 * votes.get("still", 0) - 0.1 * votes.get("clear", 0)
         if lad == "responder_verified": conf = max(conf, 0.95)
         conf = round(max(0.05, min(0.95 if lad != "responder_verified" else 0.99, conf)), 2)
     # action label (resident-facing)
@@ -207,7 +208,7 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
     elif lvl == "ankle":
         action = "Use caution"
     else:  # "none": Rule 1, never Safe from a single report
-        action = "Safe to pass" if (len(rs) >= 2 or clear >= 2) else "Needs confirmation"
+        action = "Safe to pass" if (indep >= 2 or clear >= 2) else "Needs confirmation"
     # "No longer flooded": two or more residents (more than "still flooded" votes) clear a flood incident.
     # Help requests are never auto-cleared by votes; a responder must handle them.
     gone = votes.get("gone", 0)
@@ -241,14 +242,14 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
         reasons.append("road reported impassable" + ("" if lad == "responder_verified" else "; not yet verified"))
     else:
         tier = "monitor"
-    score = SEVERITY_RANK[sev] * 20 + (10 if rising else 0) + min(3, len(rs) - 1) * 3 + (15 if help_req else 0) + still * 2
+    score = SEVERITY_RANK[sev] * 20 + (10 if rising else 0) + min(3, indep - 1) * 3 + (15 if help_req else 0) + still * 2
     age_min = int((now - ts(latest)).total_seconds() // 60)
     first_min = int((now - ts(rs[0])).total_seconds() // 60)
     return {"severity": sev, "action_label": action, "level": lvl, "level_source": lvl_src, "hazards": hz,
             "people_at_risk": people or help_req, "rising": rising and not cleared, "confidence": conf, "ladder": lad,
             "needs_human_verification": lad != "responder_verified", "tier": tier, "priority_score": score,
             "priority_reason": "; ".join(dict.fromkeys(reasons)) or "low depth, no hazards reported",
-            "updated_min_ago": age_min, "reported_min_ago": first_min, "flood_status": flood_status,
+            "updated_min_ago": age_min, "independent_reporters": indep, "reported_min_ago": first_min, "flood_status": flood_status,
             "no_longer_flooded_votes": gone, "active": age_min <= ACTIVE_H * 60 and last_action != "reject"}
 
 
