@@ -211,7 +211,7 @@ async function refresh(){const b=$('brgy').value;const [a,list]=await Promise.al
  if(list.length)map.fitBounds(L.latLngBounds(list.map(i=>[i.lat,i.lng])).pad(.4),{maxZoom:16});}
 async function vote(id,v){const r=await post(`/api/incidents/${id}/vote`,{vote:v});toast('Thanks. Your update helps nearby residents make safer decisions.');refresh()}
 async function checkArea(){$('nearH').scrollIntoView({behavior:'smooth'});const btn=$('checkBtn');if(btn.disabled)return;btn.disabled=true;
- $('advResSrc').textContent='';$('advResText').innerHTML='<span class="spin"></span>Writing the advisory from current reports. This takes about 10–15 seconds…';
+ $('advResSrc').textContent='';$('advResText').innerHTML='<span class="spin"></span>Writing the advisory from current reports. This can take up to 40 seconds…';
  try{const a=await J('/api/advisory/'+encodeURIComponent($('brgy').value));$('advResText').innerHTML=`${esc(a.en)}<br><br><i>${esc(a.fil)}</i>`;$('advResSrc').textContent=a.provider=='meta'?'· written by Muse Spark from current reports':'· template (offline)'}
  catch(e){$('advResText').textContent='Could not write the advisory: '+e.message}finally{btn.disabled=false}}
 function helpSomeone(){$('nearH').textContent='Help verify: tap what you see';$('nearH').scrollIntoView({behavior:'smooth'});
@@ -276,7 +276,7 @@ function openDrawer(id){const i=grid.find(x=>x.id==id);if(!i)return;const step=L
  <h3>Share text</h3><pre>${esc(i.share_text)}</pre>`;$('drawer').classList.add('on')}
 async function review(id,a){const note=a=='request_info'?(prompt('What do you need to know?')||''):'';try{await post(`/api/incidents/${id}/review`,{action:a,note});toast('Saved: '+a.replace('_',' '));await loadGrid();openDrawer(id)}catch(e){toast(e.message)}}
 async function genAdvisory(){const b=$('rbrgy').value||$('brgy').value,btn=$('advBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>Writing…';
- $('advSrc').innerHTML='<span class="spin"></span>Muse Spark is writing the advisory for '+esc(b)+'. This takes about 10–15 seconds.';
+ $('advSrc').innerHTML='<span class="spin"></span>Muse Spark is writing the advisory for '+esc(b)+'. This can take up to 40 seconds.';
  try{const a=await J('/api/advisory/'+encodeURIComponent(b));
  $('advOut').classList.remove('hide');$('advEn').textContent=a.en;$('advFil').textContent=a.fil;$('advSms').textContent=a.sms;$('smsN').textContent=a.sms.length;
  $('advSrc').textContent=`· ${b} · ${a.provider=='meta'?'Muse Spark':'template (offline)'}`}catch(e){$('advSrc').textContent='Could not write the advisory: '+e.message}
