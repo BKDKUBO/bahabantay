@@ -102,7 +102,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
                    "providers": sorted({r.get("provider") or "?" for r in rs}), "photo": photo,
                    "first_at": head["reported_at"], "latest_at": latest["reported_at"],
                    "approximate": any(r.get("loc_source") == "barangay" for r in rs),
-                   "review": rv[-1]["action"] if rv else None, "covered": covered(head["barangay"]), **a}
+                   "review": rv[-1]["action"] if rv else None, "covered": covered(head["barangay"]), "place": geo.place_label(head["barangay"]), **a}
             inc["share_text"] = assess.share_text(inc)
             if view == "responder":
                 inc["evidence"] = assess.evidence(rs, vrows, rv)
@@ -261,7 +261,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
     def understood(r):
         lvl, src = assess.report_level(r)
         a = r.get("assessment") or {}
-        return {"street": r["street"], "barangay": r["barangay"], "covered": covered(r["barangay"]), "approximate": r.get("loc_source") == "barangay",
+        return {"street": r["street"], "barangay": r["barangay"], "place": geo.place_label(r["barangay"]), "covered": covered(r["barangay"]), "approximate": r.get("loc_source") == "barangay",
                 "level": lvl, "level_source": src, "photo_level": assess.BAND_TO_LEVEL.get(r["band"]) if r["band"] != "cant_tell" else None,
                 "reporter_level": r.get("water_level"), "rising": r.get("rising") or a.get("rising"),
                 "trend": r.get("trend"), "car_passable": r.get("car_passable"), "reported_depth_cm": r.get("reported_depth_cm"),

@@ -117,12 +117,20 @@ def severity(level: str | None, hazards: list[str], people: bool) -> str:
 
 
 # ---------- clustering
+def same_area(a: dict, b: dict) -> bool:
+    """Same barangay in the same city: PSGC code when both have one, else the unique barangay label.
+    Keeps same-named streets in different cities/barangays (e.g. M. H. del Pilar St) from ever merging."""
+    ca, cb = a.get("psgc_code"), b.get("psgc_code")
+    if ca and cb: return ca == cb
+    return a["barangay"] == b["barangay"]
+
+
 def cluster_root(report: dict, others: list[dict]) -> int | None:
     """Earliest active report in the same barangay, same street (or within DUP_RADIUS_M), within DUP_WINDOW_MIN."""
     if report.get("kind") == "help":
         return None
     c = [o for o in others if o["id"] != report.get("id") and not o.get("duplicate_of") and o.get("kind", "flood") != "help"
-         and o["barangay"] == report["barangay"]
+         and same_area(o, report)
          and (norm_street(o["street"]) == norm_street(report["street"]) or meters(o, report) <= DUP_RADIUS_M)
          and abs((ts(o) - ts(report)).total_seconds()) <= DUP_WINDOW_MIN * 60]
     return min(c, key=ts)["id"] if c else None
@@ -147,7 +155,7 @@ def group(reports: list[dict]) -> dict[int, list[dict]]:
             if r.get("kind") != "help":
                 for k, rs in out.items():
                     h, last = rs[0], rs[-1]
-                    if h.get("kind") == "help" or h["barangay"] != r["barangay"]: continue
+                    if h.get("kind") == "help" or not same_area(h, r): continue
                     if not (norm_street(h["street"]) == norm_street(r["street"]) or meters(last, r) <= DUP_RADIUS_M): continue
                     if (ts(r) - ts(last)).total_seconds() <= INCIDENT_GAP_MIN * 60:
                         iid = k; break
@@ -331,14 +339,14 @@ ACTION_FIL = {"Safe to pass": "Madadaanan", "Use caution": "Mag-ingat", "Avoid t
 def share_text(inc: dict) -> str:
     lvl = inc.get("level")
     depth = f"{LEVEL_FIL[lvl]} / {lvl}-deep" if lvl else "di pa alam ang lalim / depth unknown"
-    return (f"BahaBantay: {inc['street']}, Brgy {inc['barangay']}: {depth}. {ACTION_FIL[inc['action_label']]} / {inc['action_label']}. "
+    return (f"BahaBantay: {inc['street']}, {inc.get('place') or 'Brgy ' + inc['barangay']}: {depth}. {ACTION_FIL[inc['action_label']]} / {inc['action_label']}. "
             f"{inc['reports']} ulat/reports, {inc['updated_min_ago']} min ago. Community report, not an official order.")
 
 
 def advisory_facts(barangay: str, incidents: list[dict]) -> dict:
     act = [i for i in incidents if i["active"] and i["barangay"] == barangay]
-    return {"barangay": barangay, "area": area_status(act),
-            "incidents": [{k: i[k] for k in ("street", "level", "action_label", "severity", "rising", "people_at_risk", "reports", "ladder", "updated_min_ago")}
+    return {"barangay": barangay, "place": act[0].get("place", barangay) if act else barangay, "area": area_status(act),
+            "incidents": [{k: i.get(k) for k in ("street", "place", "level", "action_label", "severity", "rising", "people_at_risk", "reports", "ladder", "updated_min_ago")}
                           for i in sorted(act, key=lambda i: -i["priority_score"])[:8]]}
 
 

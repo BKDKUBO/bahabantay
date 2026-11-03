@@ -210,3 +210,15 @@ def test_page_has_hotlines_and_loading_state(client):
     h = client.get("/").text
     for n in ("tel:161", "tel:122", "No longer flooded", "advBtn", "Reported "):
         assert n in h
+
+
+def test_same_street_name_in_different_cities_never_merges():
+    from app import geo
+    a = {**rep(1, street="M. H. del Pilar St"), "barangay": "Malanday", "psgc_code": "1380702000"}
+    b = {**rep(2, 3, street="M. H. Del Pilar Street"), "barangay": "Poblacion, Makati City, Metro Manila", "psgc_code": "1380300000"}
+    g = assess.group([a, b])
+    assert len(g) == 2 and assess.cluster_root(b, [a]) is None
+    # same barangay + street still merges
+    c = {**rep(3, 5, street="M. H. del Pilar St"), "barangay": "Malanday", "psgc_code": "1380702000"}
+    assert len(assess.group([a, b, c])) == 2
+    assert geo.place_label("Malanday") == "Malanday, Marikina City"

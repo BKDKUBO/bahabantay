@@ -64,8 +64,17 @@ def resolve(label: str) -> dict | None:
     return None
 
 
+def place_label(label: str) -> str:
+    """'Malanday' -> 'Malanday, Marikina City'; adds the province outside Metro Manila. Unknown labels pass through."""
+    r = resolve(label)
+    if not r: return label or ""
+    prov = r["province"] if r["province"] and r["province"] != "Metro Manila" else ""
+    return ", ".join(x for x in (r["name"], r["city"], prov) if x)
+
+
 def public(r: dict, dist_km: float | None = None) -> dict:
     out = {k: r[k] for k in ("code", "label", "name", "city", "province", "region", "lat", "lng", "approx", "covered")}
+    out["place"] = place_label(r["label"])
     if dist_km is not None: out["distance_km"] = round(dist_km, 2)
     return out
 

@@ -218,3 +218,24 @@ def test_dark_theme_toggle_present(client):
     assert "localStorage.getItem('bb-theme')" in html and "prefers-color-scheme: dark" in html
     assert html.index("bb-theme") < html.index("<style>")      # applied before first paint
     assert "html[data-theme=dark]" in html and ".leaflet-tile-pane{filter" in html
+
+
+def test_emergency_first_layout(client):
+    html = client.get("/").text
+    for t in ('data-t="home"', 'data-t="map"', 'data-t="report"', 'data-t="help"', 'data-t="resp"'):
+        assert t in html
+    assert "For barangay staff" in html
+    assert 'id="alert"' in html and 'role="alert"' in html
+    assert 'id="fab911"' in html and 'href="tel:911"' in html
+    assert "Get help<small>Humingi ng tulong" in html and "Check my area<small>Tingnan ang lugar" in html
+    assert 'id="sum"' in html and "Step ${n} of 3" in html and "AI suggests" in html
+    assert 'id="advBtn"' in html and html.index('id="advBtn"') > html.index('<section id="resp"')
+    assert 'id="langBtn"' in html and "How we verify reports" in html
+
+
+def test_incidents_carry_barangay_and_city(client):
+    incs = client.get("/api/incidents?barangay=Malanday").json()
+    assert incs and all(i["place"] == "Malanday, Marikina City" for i in incs)
+    assert "Malanday, Marikina City" in incs[0]["share_text"]
+    facts = client.get("/api/advisory/Malanday").json()["facts"]
+    assert facts["place"] == "Malanday, Marikina City" and facts["incidents"][0]["place"] == "Malanday, Marikina City"

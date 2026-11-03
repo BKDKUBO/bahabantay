@@ -108,26 +108,77 @@ html[data-theme=dark] .leaflet-container{background:#1b2633}
 html[data-theme=dark] .leaflet-popup-content-wrapper,html[data-theme=dark] .leaflet-popup-tip{background:var(--card);color:var(--ink)}
 html[data-theme=dark] .leaflet-control-attribution{background:#0e141ccc!important;color:#a9b6c6}html[data-theme=dark] .leaflet-control-attribution a{color:#8cc4f2}
 html[data-theme=dark] .leaflet-bar a{background:#1b2633;color:var(--ink);border-color:#3a4a5e}
+/* emergency-first redesign */
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.bwrap{flex-wrap:wrap}.bwrap>[id$=Chip]{flex-basis:100%;order:3}.bwrap>[id$=Chip] .chip{margin:2px 0 0}
+.alert{border-radius:20px;padding:16px;color:#fff;margin:10px 0 8px;display:flex;gap:12px;align-items:flex-start}
+.alert .ic{font-size:36px;line-height:1;flex:none;background:#ffffff26;border-radius:14px;width:54px;height:54px;display:flex;align-items:center;justify-content:center}
+.alert h2{margin:0 0 4px;font-size:21px;line-height:1.2;letter-spacing:.01em}.alert p{margin:0 0 6px;font-size:16px;font-weight:600}.alert .upd{font-size:13px;opacity:.95;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.alert.danger{background:var(--red)}.alert.watch{background:#b8440a}.alert.safe{background:#0b6e70}.alert.unknown{background:#4a5a70}
+.prim{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.prim .big{min-height:76px}.b3{background:#7b1010!important;color:#fff}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.sum div{background:var(--card);border-radius:14px;padding:10px 12px;box-shadow:0 1px 3px #0b254522}.sum small{display:block;color:var(--mut);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.sum b{font-size:18px}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.quick .btn{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:14px;padding:10px 4px}.quick .btn span{font-size:22px}.quick small{font-weight:500;font-size:11px;opacity:.8}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:1500;background:var(--card);border-top:1px solid #c9d3e0;display:flex;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 10px #0b254522}
+nav.tabs button{flex:1;border:0;background:none;color:var(--mut);font:inherit;font-size:12px;font-weight:700;padding:8px 2px 9px;min-height:62px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;border-top:3px solid transparent}
+nav.tabs button span{font-size:22px;line-height:1}nav.tabs button.on{color:var(--blue);border-top-color:var(--blue);background:var(--sky)}
+nav.tabs button.resp{border-left:1px solid #c9d3e0}nav.tabs button.resp small{font-size:9px;font-weight:600;line-height:1}
+.fab911{position:fixed;right:14px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:1600;background:#c62828;color:#fff;text-decoration:none;font-weight:800;border-radius:999px;padding:12px 16px;box-shadow:0 4px 14px #0006;display:flex;align-items:center;gap:6px;font-size:16px;border:3px solid #fff}
+.fab911 small{font-weight:600;font-size:11px;display:block;line-height:1}
+.respnote{background:#e7ecf3;color:#33415c;border-radius:12px;padding:10px 12px;font-size:14px;margin:0 0 10px}
+.lang{border:2px solid #ffffff55;background:#ffffff22;color:#fff;border-radius:999px;height:44px;padding:0 12px;font-weight:800;cursor:pointer}
+details.how{margin-top:6px;font-size:13px;color:var(--mut)}details.how summary{cursor:pointer;font-weight:600}
+.plain{font-size:14px;font-weight:600;margin-top:4px}
+.card.callhelp{border-color:#7b1010;background:#fff0f0}.card.callhelp .tag{background:#7b1010;color:#fff;border-radius:8px;padding:4px 8px;display:inline-flex}
+.stepn{font-weight:800;color:var(--blue);font-size:14px;text-transform:uppercase;letter-spacing:.05em;margin-top:6px}
+.choice.huge button{min-height:96px;font-size:17px}
+.aisug{background:var(--sky);border-radius:12px;padding:10px 12px;font-weight:700;margin:8px 0}
+@media(min-width:900px){.prim .big{min-height:84px}.sum{grid-template-columns:repeat(4,1fr)}}
+html[data-theme=dark] nav.tabs{background:#121b26;border-color:#24364d}html[data-theme=dark] nav.tabs button.on{background:var(--sky)}
+html[data-theme=dark] .respnote{background:#1b2633;color:#dbe4ee}html[data-theme=dark] .card.callhelp{background:#3a1212;border-color:#ff8a8a}
+html[data-theme=dark] .sum div{background:var(--card);box-shadow:0 1px 3px #0008}
 </style></head><body>
 <header><div class="hrow"><h1>🌊 BahaBantay</h1>
-<div class="hr"><button id="thm" class="thm" type="button" onclick="toggleTheme()" aria-label="Switch to dark theme" title="Switch to dark theme">🌙</button><div class="mode" role="tablist"><button id="mRes" class="on" onclick="setMode('res')">Resident</button><button id="mResp" onclick="setMode('resp')">Responder</button></div></div></div>
+<div class="hr"><button id="thm" class="thm" type="button" onclick="toggleTheme()" aria-label="Switch to dark theme" title="Switch to dark theme">🌙</button><button id="langBtn" class="lang" type="button" onclick="toggleLang()" aria-label="Switch language">FIL</button></div></div>
 <div class="live" id="live"><span class="pill sample">Checking AI provider…</span></div></header>
 <main>
 <!-- RESIDENT -->
-<section id="res" class="wrap">
- <label for="brgy" style="margin-top:4px">My barangay <span class="src">· search any barangay in the Philippines</span></label>
+<section id="home" class="wrap tab">
+ <label for="brgy" style="margin-top:4px"><span data-en="My barangay" data-fil="Aking barangay">My barangay</span> <span class="src">· <span data-en="search any barangay in the Philippines" data-fil="hanapin ang kahit anong barangay sa Pilipinas">search any barangay in the Philippines</span></span></label>
  <div class="bwrap"><input id="brgy" autocomplete="off" placeholder="Type a barangay, e.g. Tumana or Poblacion Davao">
  <button class="btn sm" onclick="nearMe('brgy')" title="Suggest the nearest barangay from my location">📡 Near me</button></div>
  <div id="brgySug" class="src"></div>
- <div id="area" class="area watch"><div class="ic">…</div><div><b>Loading</b><small></small></div></div>
- <div class="actions">
-  <button class="big b1" onclick="openReport()"><span>📷</span>Report flood<small>Mag-ulat ng baha</small></button>
+ <div id="cov"></div>
+ <div id="alert" class="alert unknown" role="alert" aria-live="polite"><div class="ic">…</div><div><h2>Loading…</h2></div></div>
+ <div class="prim">
+  <button class="big b3" id="getHelpBtn" onclick="openHelp()"><span>🆘</span>Get help<small>Humingi ng tulong</small></button>
   <button class="big b2" id="checkBtn" onclick="checkArea()"><span>📍</span>Check my area<small>Tingnan ang lugar</small></button>
-  <button class="big b3" onclick="openHelp()"><span>🆘</span>I need help<small>Kailangan ko ng tulong</small></button>
-  <button class="big b4" onclick="helpSomeone()"><span>🤝</span>Help someone<small>Verify reports nearby</small></button>
  </div>
- <h2 id="nearH">Nearby situation</h2><div id="cards"></div>
- <div class="panel" id="advRes"><b>📢 Barangay advisory</b> <span class="src" id="advResSrc"></span><p id="advResText" class="meta">Tap “Check my area” to generate.</p></div>
+ <div class="sum" id="sum"></div>
+ <button class="btn pri full" id="seeBtn" style="margin-top:0" onclick="tab('map',1)">🗺 See nearby reports</button>
+ <h2 data-en="What do you need?" data-fil="Ano ang kailangan mo?">What do you need?</h2>
+ <div class="quick">
+  <button class="btn" onclick="openReport()"><span>📷</span>Report flood<small>Mag-ulat ng baha</small></button>
+  <button class="btn" onclick="tab('help')"><span>☎️</span>Hotlines<small>Mga hotline</small></button>
+  <button class="btn" onclick="shareArea()"><span>📤</span>Share alert<small>Ibahagi</small></button>
+ </div>
+ <div class="panel" id="advRes" style="margin-top:14px"><b>📢 <span data-en="What to do in your area" data-fil="Ano ang gagawin sa inyong lugar">What to do in your area</span></b> <span class="src" id="advResSrc"></span><p id="advResText" class="meta" data-en="Tap “Check my area” for a plain-language advisory from current reports." data-fil="Pindutin ang “Tingnan ang lugar” para sa payo mula sa mga ulat ngayon.">Tap “Check my area” for a plain-language advisory from current reports.</p></div>
+ <p class="src">Community reports, not official orders. In an emergency call 911 or your BDRRMO.</p>
+</section>
+<section id="mapt" class="wrap tab hide">
+ <h2 id="mapH" style="margin-top:6px">Map · <span id="mapB"></span></h2>
+ <div id="map"></div><div id="legend" class="src"></div>
+ <details class="how"><summary data-en="How we verify reports" data-fil="Paano namin sinusuri ang mga ulat">How we verify reports</summary><p id="howTxt"></p></details>
+ <div class="row"><button class="btn sm" onclick="helpSomeone()">🤝 Help verify reports nearby</button></div>
+ <h2 id="nearH">Nearby reports</h2><div id="cards"></div>
+ <p class="src">Public view shows approximate locations only (≈100 m). Community reports, not official orders.</p>
+</section>
+<section id="helpt" class="wrap tab hide">
+ <h2 style="margin-top:6px">🆘 Help · Tulong</h2>
+ <div class="note danger"><b data-en="If life is in danger, call 911 now." data-fil="Kung may buhay na nasa panganib, tumawag sa 911 ngayon.">If life is in danger, call 911 now.</b></div>
+ <div class="prim"><a class="big b3" href="tel:911" style="text-decoration:none"><span>📞</span>Call 911<small>Tumawag sa 911</small></a>
+ <button class="big b1" onclick="openHelp()"><span>🆘</span>Request rescue<small>Humingi ng tulong</small></button></div>
  <!-- Hotlines verified 2026-11-03 from official sources:
    Marikina Rescue 161 / 8646-2436 to 38 / 0917-584-2168 / 0928-559-3341: https://www.marikina.gov.ph/contact-us
      (also listed by Manila Bulletin, Aug 9 2026). 0998 numbers omitted: the city page and news disagree on digits.
@@ -144,11 +195,12 @@ html[data-theme=dark] .leaflet-bar a{background:#1b2633;color:var(--ink);border-
   <a href="tel:+63289284396">QCDRRMO <span>(02) 8928-4396</span></a>
   <a href="tel:+639478859929">QC Emergency Operations Center <span>0947-885-9929</span></a>
   <p class="src">Numbers from marikina.gov.ph and quezoncity.gov.ph, checked Nov 3, 2026.</p></div>
- <h2>Map</h2><div id="map"></div><div id="legend" class="src"></div>
- <p class="src">Public view shows approximate locations only (≈100 m). Community reports, not official orders. In an emergency call 911 or your BDRRMO.</p>
+ <div class="panel"><b>🏃 <span data-en="If water is rising" data-fil="Kung tumataas ang tubig">If water is rising</span></b>
+  <ul id="evac" style="margin:6px 0;padding-left:20px"></ul><p class="src">General guidance. Follow your BDRRMO and PAGASA instructions.</p></div>
 </section>
 <!-- RESPONDER -->
-<section id="resp" class="hide">
+<section id="resp" class="tab hide">
+ <div class="respnote">🛡 <b>Responder view · For barangay staff.</b> Action Grid, evidence drawer and advisory generator. (Open in this demo, no login, so judges can try it.)</div>
  <div class="row" style="align-items:center;margin-top:0"><b>Action Grid</b><select id="rbrgy" style="max-width:240px" onchange="loadGrid()"><option value="">All barangays</option></select>
  <button class="btn sm" onclick="loadGrid()">↻ Refresh</button></div>
  <div class="grid" style="margin-top:10px">
@@ -167,21 +219,29 @@ html[data-theme=dark] .leaflet-bar a{background:#1b2633;color:var(--ink);border-
   <p id="ans" class="meta"></p></div></div>
 </section>
 </main>
+<a class="fab911" id="fab911" href="tel:911" aria-label="Call 911 emergency">📞 911<small>Rescue</small></a>
+<nav class="tabs" id="tabs" aria-label="Main">
+ <button id="tHome" data-t="home" onclick="tab('home')" class="on"><span>🏠</span>Home</button>
+ <button id="tMap" data-t="map" onclick="tab('map')"><span>🗺</span>Map</button>
+ <button id="tReport" data-t="report" onclick="openReport()"><span>📷</span>Report</button>
+ <button id="tHelp" data-t="help" onclick="tab('help')"><span>🆘</span>Help</button>
+ <button id="tResp" data-t="resp" class="resp" onclick="tab('resp')"><span>🛡</span>Responder<small>For barangay staff</small></button>
+</nav>
 
 <!-- REPORT FLOW -->
 <div class="sheet" id="rsheet"><header><button class="x" onclick="closeSheet('rsheet')" aria-label="Close">✕</button><b>Report flood / Mag-ulat</b></header>
-<main class="wrap"><div class="steps" id="steps"><i></i><i></i><i></i><i></i></div>
- <div id="s1"><h2>1 · Take a photo</h2><p class="meta">Include a door, person, car tire, jeepney or curb so the AI can estimate depth.</p>
+<main class="wrap"><div class="stepn" id="stepn">Step 1 of 3</div><div class="steps" id="steps"><i></i><i></i><i></i></div>
+ <div id="s1"><h2>📷 Take a photo <small class="src">Kumuha ng litrato</small></h2><p class="meta">Include a door, person, car tire, jeepney or curb so the AI can estimate depth.</p>
   <input type="file" id="photo" accept="image/*" capture="environment" onchange="prevPhoto()">
   <button class="btn sm" style="margin-top:8px" onclick="samplePhoto()">Use a sample photo (demo)</button>
   <img id="photoPrev" alt="photo preview"><button class="btn pri full" onclick="go(2)">Next</button></div>
- <div id="s2" class="hide"><h2>2 · Where is it?</h2>
+ <div id="s2" class="hide"><h2>📍 Where is it? <small class="src">Saan?</small></h2>
   <label>Barangay</label><input id="fBrgy" autocomplete="off" placeholder="Search barangay"><div id="fBrgySug" class="src"></div>
   <label>Street or landmark</label><input id="fStreet" placeholder="e.g. Bayabas St near the chapel">
   <div class="row"><button class="btn sm" onclick="gps()">📡 Use my location</button><span class="src" id="locMsg">Or tap the map. If you skip, we use the barangay area (approximate).</span></div>
   <div id="pickmap" style="margin-top:8px"></div><button class="btn pri full" onclick="go(3)">Next</button></div>
- <div id="s3" class="hide"><h2>3 · How high is the water?</h2>
-  <div class="choice" id="lvl"><button data-v="ankle">🦶<br>Ankle</button><button data-v="knee">🦵<br>Knee</button><button data-v="waist">🧍<br>Waist</button><button data-v="higher">⬆️<br>Higher</button></div>
+ <div id="s3" class="hide"><h2>🌊 How high is the water? <small class="src">Gaano kataas?</small></h2>
+  <div class="choice huge" id="lvl"><button data-v="ankle">🦶<br>Ankle<br><small>Bukung-bukong</small></button><button data-v="knee">🦵<br>Knee<br><small>Tuhod</small></button><button data-v="waist">🧍<br>Waist<br><small>Baywang</small></button><button data-v="higher">⬆️<br>Above waist<br><small>Lampas baywang</small></button></div>
   <label for="fCm">Depth in cm, if you know it <span class="src">(optional)</span></label><input id="fCm" type="number" inputmode="numeric" min="0" max="300" placeholder="e.g. 45">
   <label>Is the water… / Ang tubig ay…</label>
   <div class="choice" id="rise"><button data-v="rising">↑ Rising<br><small>Tumataas</small></button><button data-v="steady">→ Steady<br><small>Hindi gumagalaw</small></button><button data-v="receding">↓ Going down<br><small>Bumababa</small></button><button data-v="unsure">Not sure</button></div>
@@ -189,10 +249,10 @@ html[data-theme=dark] .leaflet-bar a{background:#1b2633;color:var(--ink);border-
   <div class="choice c3" id="car"><button data-v="yes">🚗 Yes / Oo</button><button data-v="no">⛔ No / Hindi</button><button data-v="unsure">Not sure</button></div>
   <label>Anything else? (optional)</label><textarea id="fNote" rows="3" placeholder="Hal. May matanda sa 2nd floor, may kable sa tubig…"></textarea>
   <button class="btn sm hide" id="mic" style="margin-top:6px" onclick="dictate()">🎤 Speak instead (browser speech-to-text, not Meta)</button>
-  <button class="btn pri full" onclick="analyze()">Send to BahaBantay</button></div>
+  <button class="btn pri full" onclick="analyze()">Publish report / I-publish</button></div>
  <div id="s4" class="hide"><h2>Checking your report…</h2><ul class="prog" id="prog"><li id="p1">Report received</li><li id="p2">AI checking the photo (SAM 3.1)</li><li id="p3">Reading your note (Muse Spark)</li><li id="p4">Comparing with nearby reports</li></ul></div>
- <div id="s5" class="hide"><h2>AI understood</h2><div class="und" id="und"></div>
-  <label>Is the water level right? Tap to correct</label><div class="choice" id="lvl2"><button data-v="ankle">Ankle</button><button data-v="knee">Knee</button><button data-v="waist">Waist</button><button data-v="higher">Higher</button></div>
+ <div id="s5" class="hide"><h2>Check before publishing</h2><div class="aisug" id="aisug"></div><div class="und" id="und"></div>
+  <label>Confirm or correct the water level / Tama ba?</label><div class="choice" id="lvl2"><button data-v="ankle">Ankle</button><button data-v="knee">Knee</button><button data-v="waist">Waist</button><button data-v="higher">Above waist</button></div>
   <button class="btn pri full" onclick="publish()">✓ Confirm and publish</button><button class="btn full" onclick="go(3)">Edit details</button></div>
  <div id="s6" class="hide ac"><div id="acTop"></div>
   <h3>🔎 What we detected</h3><p id="acDet"></p><h3>➡️ What to do now</h3><p id="acDo"></p><h3>🤝 How to help</h3><p id="acHelp"></p>
@@ -202,7 +262,7 @@ html[data-theme=dark] .leaflet-bar a{background:#1b2633;color:var(--ink);border-
 </main></div>
 
 <!-- HELP FLOW -->
-<div class="sheet" id="hsheet"><header><button class="x" onclick="closeSheet('hsheet')" aria-label="Close">✕</button><b>🆘 I need help / Kailangan ko ng tulong</b></header>
+<div class="sheet" id="hsheet"><header><button class="x" onclick="closeSheet('hsheet')" aria-label="Close">✕</button><b>🆘 Get help / Humingi ng tulong</b></header>
 <main class="wrap"><div class="note danger">If life is in danger, call <b>911</b> or your barangay now. This request goes to the responder queue; it is not a guaranteed rescue.</div>
  <div id="hForm"><label>Barangay</label><input id="hBrgy" autocomplete="off" placeholder="Search barangay"><div id="hBrgySug" class="src"></div><label>Street or landmark</label><input id="hStreet" placeholder="e.g. M. H. del Pilar St, blue gate">
  <label>What do you need? (who, how many)</label><textarea id="hNote" rows="3" placeholder="Hal. 3 kami, may lola na hindi makalakad, nasa 2nd floor"></textarea>
@@ -225,11 +285,11 @@ const DO={"Safe to pass":"Reported passable. Conditions change fast, so go caref
  "Needs confirmation":"Not confirmed yet. Don't rely on this alone; check with your barangay or look again later.",
  "Help may be needed":"If you see someone in danger, call 911 or your BDRRMO. Do not enter deep water yourself."};
 const LADDER=[["user_reported","User reported"],["ai_grouped","AI grouped"],["community_corroborated","Community corroborated"],["responder_verified","Responder verified"]];
-const LVL={none:'No water',ankle:'Ankle-deep',knee:'Knee-deep',waist:'Waist-deep',higher:'Above waist'};
+const LVL={none:'No water',ankle:'Ankle-deep',knee:'Knee-deep',waist:'Waist-deep',higher:'Above waist'};const LRANK={none:0,ankle:1,knee:2,waist:3,higher:4};
 const PROV={meta:'Meta AI (SAM 3.1)','mock-fallback':'Offline estimator — Meta unavailable',mock:'Offline estimator',sample:'Sample data',resident:'Resident'};
 const CID=localStorage.bbcid||(localStorage.bbcid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)));
-let health=null,mode='res',incs=[],shareTxt='',photoBlob=null,pick=null,draft=null,lvl='',rise='',car='',lvl2='';
-const ago=m=>m==null?'':m<1?'just now':m<60?`${m} min ago`:`${Math.floor(m/60)} h ${m%60} min ago`;
+let health=null,mode='home',area=null,incs=[],shareTxt='',photoBlob=null,pick=null,draft=null,lvl='',rise='',car='',lvl2='';
+const ago=m=>{const f=typeof LANG!='undefined'&&LANG=='fil';return m==null?'':m<1?(f?'ngayon lang':'just now'):m<60?(f?`${m} min ang nakalipas`:`${m} min ago`):(f?`${Math.floor(m/60)} h ${m%60} min ang nakalipas`:`${Math.floor(m/60)} h ${m%60} min ago`)};
 function toast(t){toast.el=$('toast');toast.el.textContent=t;toast.el.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>toast.el.style.display='none',3200)}
 async function copy(t){try{await navigator.clipboard.writeText(t);toast('Copied. Paste it in Messenger, Facebook or SMS.')}catch{prompt('Copy this:',t)}}
 async function loadHealth(){health=await J('/api/health');const L=$('live');
@@ -285,33 +345,69 @@ async function centerPick(label){const m=await meta(label);if(m&&m.lat!=null&&pi
 async function loadBrgys(){const bs=await J('/api/barangays');active=bs;if(!$('brgy').value)$('brgy').value=bs.includes('Malanday')?'Malanday':(bs[0]||'');
  brgyBox('brgy',()=>refresh());($('brgy').value?meta($('brgy').value):Promise.resolve()).then(()=>setChip('brgy',$('brgy').value));brgyBox('fBrgy',centerPick);brgyBox('hBrgy');
  $('rbrgy').innerHTML='<option value="">All barangays</option>'+bs.map(b=>`<option>${esc(b)}</option>`).join('')}
-function card(i,opts={}){const [ic,k]=ACT[i.action_label];const step=LADDER.findIndex(l=>l[0]==i.ladder);
- return `<div class="card a-${k}" ${opts.click?`onclick="openDrawer(${i.id})"`:''}><div class="top"><div><div class="tag t-${k}">${ic} ${i.action_label.toUpperCase()}</div>
- <div style="font-weight:700;font-size:17px">${esc(i.street)}${i.kind=='help'?' — help request':''}</div></div>${i.sample?'<span class="pill sample">Sample report</span>':''}${i.covered===false?'<span class="pill warn">Outside responder coverage</span>':''}</div>
+const PLAIN={user_reported:'Not verified yet',ai_grouped:'Grouped with similar reports',community_corroborated:'Verified by nearby reports',responder_verified:'Confirmed by barangay responders'};
+const PLAIN_FIL={user_reported:'Hindi pa beripikado',ai_grouped:'Kasama ng ibang kaparehong ulat',community_corroborated:'Beripikado ng mga kalapit na ulat',responder_verified:'Kinumpirma ng barangay responders'};
+const likely=c=>c==null?(LANG=='fil'?'Hindi pa sigurado':'Not sure yet'):c>=.75?(LANG=='fil'?'Malamang tama':'Likely accurate'):c>=.5?(LANG=='fil'?'Posibleng tama':'Possibly accurate'):(LANG=='fil'?'Mahina pa ang ebidensya':'Weak evidence so far');
+const where=i=>esc(i.street)+', '+esc(i.place||i.barangay);
+function card(i,opts={}){const help=i.kind=='help';const [ic,k]=help?['🆘','help']:ACT[i.action_label];const step=LADDER.findIndex(l=>l[0]==i.ladder);
+ return `<div class="card a-${k}${help?' callhelp':''}" ${opts.click?`onclick="openDrawer(${i.id})"`:''}><div class="top"><div><div class="tag t-${k}">${help?'🆘 CALL FOR HELP · Humingi ng tulong':ic+' '+i.action_label.toUpperCase()}</div>
+ <div style="font-weight:700;font-size:17px">${where(i)}${help?' — help request':''}</div></div>${i.sample?'<span class="pill sample">Sample report</span>':''}${i.covered===false?'<span class="pill warn">Outside responder coverage</span>':''}</div>
  <div class="meta">${i.level?'🌊 '+LVL[i.level]:'🌊 Depth unknown'}${i.trend&&i.trend!='unsure'?' · '+TR[i.trend]:''}${i.car_passable=='no'?' · ⛔ cars cannot pass':i.car_passable=='yes'?' · 🚗 cars can pass':''} · ${i.reports} report${i.reports>1?'s':''}</div>
  <div class="fresh">🕒 Reported ${ago(i.reported_min_ago)}${i.reports>1&&i.updated_min_ago!=i.reported_min_ago?` · latest ${ago(i.updated_min_ago)}`:''}${i.flood_status=='cleared'?' · <b>✅ No longer flooded (residents)</b>':i.flood_status=='clear_reported'?` · ${i.no_longer_flooded_votes} says no longer flooded, 1 more needed`:''}</div>
- <div class="src">${i.level_source=='ai_detected'?'🤖 depth from photo':i.level?'👤 depth from reporter':'❔ no depth yet'}${i.votes.still+i.votes.clear?` · 👥 ${i.votes.still} still flooded, ${i.votes.clear} clear`:''} · ${LADDER[step][1]}${i.confidence!=null?` · confidence ${Math.round(i.confidence*100)}%`:''}${i.approximate?' · approx. location':''}</div>
+ ${opts.click?`<div class="src">${i.level_source=='ai_detected'?'🤖 depth from photo':i.level?'👤 depth from reporter':'❔ no depth yet'}${i.votes.still+i.votes.clear?` · 👥 ${i.votes.still} still flooded, ${i.votes.clear} clear`:''} · ${LADDER[step][1]}${i.confidence!=null?` · confidence ${Math.round(i.confidence*100)}%`:''}${i.approximate?' · approx. location':''}</div>`:
+ `<div class="plain">${i.ladder=='community_corroborated'||i.ladder=='responder_verified'?'✔':'○'} ${(LANG=='fil'?PLAIN_FIL:PLAIN)[i.ladder]} · ${likely(i.confidence)}</div>
+ <details class="how"><summary>${LANG=='fil'?'Detalye':'Details'}</summary>${i.level_source=='ai_detected'?'🤖 depth from photo (Meta SAM 3.1)':i.level?'👤 depth from reporter':'❔ no depth yet'}${i.votes.still+i.votes.clear?` · 👥 ${i.votes.still} still flooded, ${i.votes.clear} clear`:''} · stage: ${LADDER[step][1]}${i.confidence!=null?` · AI confidence ${Math.round(i.confidence*100)}%`:''}${i.approximate?' · approx. location':''}</details>`}
  ${opts.click?`<div class="src" style="margin-top:4px"><b>Why:</b> ${esc(i.priority_reason)}</div>`:''}
  ${opts.vote&&i.kind!='help'?`<div class="row"><span class="src" style="width:100%">Is this still accurate?</span><button class="btn sm" onclick="vote(${i.id},'still')">🌊 Still flooded</button><button class="btn sm" onclick="vote(${i.id},'clear')">☀️ Already clear</button><button class="btn sm" onclick="vote(${i.id},'unsure')">🤷 Not sure</button>${i.flood_status!='cleared'?`<button class="btn sm" onclick="vote(${i.id},'gone')">✅ No longer flooded</button>`:''}<button class="btn sm" onclick='copy(${JSON.stringify(i.share_text)})'>📤 Share</button></div>`:''}</div>`}
+const AL={danger:['⛔','DANGER','PANGANIB','Deep flooding reported in','May malalim na baha sa','Avoid travel. Move to higher ground if water is rising.','Iwasan ang pagbiyahe. Lumipat sa mataas na lugar kung tumataas ang tubig.'],
+ watch:['⚠️','WATCH','MAG-INGAT','Flooding reported in','May ulat ng baha sa','Avoid flooded streets and take care if you must go out.','Iwasan ang bahang kalye at mag-ingat kung lalabas.'],
+ safe:['✔','CLEAR','MADADAANAN','No serious flooding reported in','Walang seryosong baha sa','Stay alert. Conditions can change quickly.','Manatiling alerto. Mabilis magbago ang sitwasyon.'],
+ unknown:['?','NO DATA','WALANG DATOS','No recent reports for','Walang bagong ulat para sa','No reports does not mean no flood. Check before you go.','Kahit walang ulat, maaaring may baha. Tingnan muna bago umalis.']};
+function paintHome(){const a=area;if(!a)return;const b=$('brgy').value,m=BM[b],pl=(m&&m.place)||(incs[0]&&incs[0].place)||b,f=LANG=='fil',A=AL[a.status];
+ $('alert').className='alert '+a.status;$('alert').innerHTML=`<div class="ic" aria-hidden="true">${A[0]}</div><div><h2>${f?A[2]:A[1]}: ${f?A[4]:A[3]} ${esc(pl)}</h2><p>${f?A[6]:A[5]}</p><div class="upd">${a.updated_min_ago!=null?(f?'Na-update ':'Updated ')+ago(a.updated_min_ago):(f?'Walang bagong ulat':'No recent updates')}</div></div>`;
+ const fl=incs.filter(i=>i.kind!='help'&&i.level),top=fl.sort((x,y)=>LRANK[y.level]-LRANK[x.level])[0];
+ incs.forEach(i=>{if(!i.trend&&i.rising===true)i.trend='rising'});const lat=[...incs].filter(i=>i.trend&&i.trend!='unsure').sort((x,y)=>x.updated_min_ago-y.updated_min_ago)[0];
+ const ver=incs.filter(i=>i.ladder=='community_corroborated'||i.ladder=='responder_verified').map(i=>i.updated_min_ago);
+ const T=f?{rising:'↑ Tumataas',steady:'→ Hindi gumagalaw',receding:'↓ Bumababa'}:{rising:'↑ Rising',steady:'→ Steady',receding:'↓ Going down'};
+ $('sum').innerHTML=`<div><small>${f?'Taas ng baha':'Flood level'}</small><b>🌊 ${top?LVL[top.level]:(f?'Hindi alam':'Unknown')}</b></div><div><small>${f?'Takbo':'Trend'}</small><b>${lat?T[lat.trend]:(f?'Hindi alam':'Unknown')}</b></div>
+ <div><small>${f?'Huling beripikado':'Last verified'}</small><b>🕒 ${ver.length?ago(Math.min(...ver)):(f?'Wala pa':'Not yet')}</b></div><div><small>${f?'Mga ulat sa malapit':'Reports nearby'}</small><b>📋 ${a.reports}</b></div>`;
+ $('seeBtn').textContent=a.incidents?`🗺 ${f?'Tingnan ang':'See'} ${a.incidents} ${f?'kalapit na ulat':'nearby report'+(a.incidents==1?'':'s')}`:(f?'🗺 Buksan ang mapa':'🗺 Open the map');
+ $('mapB').textContent=pl}
+let lastBounds=null;
 async function refresh(){const b=$('brgy').value;const [a,list]=await Promise.all([J('/api/area/'+encodeURIComponent(b)),J('/api/incidents?barangay='+encodeURIComponent(b))]);
- incs=list;const IC={safe:'✔',watch:'⚠',danger:'⛔',unknown:'?'},NM={safe:'Safe',watch:'Watch',danger:'Danger',unknown:'No data'};
- $('area').className='area '+a.status;$('area').innerHTML=`<div class="ic">${IC[a.status]}</div><div style="flex:1"><b>${NM[a.status]} · ${esc(b)}</b><small>${esc(a.text)}<br>${a.reports} report${a.reports==1?'':'s'} · ${a.incidents} incident${a.incidents==1?'':'s'}${a.updated_min_ago!=null?' · updated '+ago(a.updated_min_ago):''}</small></div><div class="pulse"></div>`;
- const m=await meta(b);$('cards').innerHTML=(m&&!m.covered?`<div class="cov">📍 <b>${esc(b)}</b> is outside BahaBantay responder coverage (demo covers Marikina). You can still report and read reports here, but no BahaBantay responder team will act on them. In an emergency call <a href="tel:911">911</a>.</div>`:'')+
- (list.length?list.map(i=>card(i,{vote:1})).join(''):'<p class="meta">No active reports here yet. Be the first to report.</p>');
- const cm=await J('/api/cells?barangay='+encodeURIComponent(b));layer.clearLayers();
+ incs=list;area=a;const m=await meta(b);paintHome();
+ $('cov').innerHTML=m&&!m.covered?`<div class="cov">📍 <b>${esc(m.place||b)}</b> is outside BahaBantay responder coverage (demo covers Marikina). You can still report and read reports here, but no BahaBantay responder team will act on them. In an emergency call <a href="tel:911">911</a>.</div>`:'';
+ $('nearH').textContent=LANG=='fil'?'Mga kalapit na ulat':'Nearby reports';
+ $('cards').innerHTML=list.length?list.map(i=>card(i,{vote:1})).join(''):'<p class="meta">No active reports here yet. Be the first to report.</p>';
+ const cm=await J('/api/cells?barangay='+encodeURIComponent(b));layer.clearLayers();CPL=(m&&m.place)||b;
  cm.cells.forEach(c=>{const col=c.state=='stale'?'#8a94a3':LCOL[c.level]||'#7a8699';
-  L.rectangle(c.bounds,{color:c.people_at_risk&&c.state!='stale'?'#c62828':col,weight:c.state=='observed'?2:2,dashArray:c.state=='unconfirmed'?'6 5':null,
+  L.rectangle(c.bounds,{color:c.people_at_risk&&c.state!='stale'?'#c62828':col,weight:2,dashArray:c.state=='unconfirmed'?'6 5':null,
    fillColor:col,fillOpacity:c.state=='observed'?.6:c.state=='unconfirmed'?.25:.18}).bindPopup(cellPop(c)).addTo(layer)});
- $('legend').innerHTML=`<span class="lg obs"></span>Observed & confirmed <span class="lg unc"></span>Single report / unconfirmed <span class="lg sta"></span>Old or weak data · ${Math.round(cm.cell_m)} m squares, reports fade by half every ${cm.half_life_min} min and expire after ${cm.expire_h} h. Blank = no data, not “no flood”.`;
- if(cm.cells.length)map.fitBounds(L.latLngBounds(cm.cells.flatMap(c=>c.bounds)).pad(.3),{maxZoom:16});else if(m&&m.lat!=null)map.setView([m.lat,m.lng],15);}
+ $('legend').innerHTML=`<span class="lg obs"></span>Observed & confirmed <span class="lg unc"></span>Single report / unconfirmed <span class="lg sta"></span>Old or weak data · ${Math.round(cm.cell_m)} m squares. Blank = no data, not “no flood”.`;
+ $('howTxt').innerHTML=`Each report is checked by Meta SAM 3.1 (photo depth) and Muse Spark (your note), grouped with nearby reports, and confirmed by neighbors' votes and barangay responders. Reports count half as much every ${cm.half_life_min} min and expire after ${cm.expire_h} h; several reports from one phone count as one person. Map squares are ${Math.round(cm.cell_m)} m to protect reporters' exact location. Tap a card's “Details” to see the AI confidence %.`;
+ lastBounds=cm.cells.length?L.latLngBounds(cm.cells.flatMap(c=>c.bounds)).pad(.3):(m&&m.lat!=null?L.latLng(m.lat,m.lng):null);fitMap()}
+let CPL='';function fitMap(){if(mode!='map'||!lastBounds)return;map.invalidateSize();if(lastBounds.getCenter&&lastBounds.getNorthEast)map.fitBounds(lastBounds,{maxZoom:16});else map.setView(lastBounds,15)}
+const EVAC={en:['Move to a higher floor or higher ground. Bring IDs, medicine, phone and charger.','Turn off electricity at the main switch if water may reach outlets.','Do not walk or drive through moving water. Stay away from wires.','Go to your barangay evacuation center if told to, or if water keeps rising.'],
+ fil:['Umakyat sa mas mataas na palapag o lugar. Dalhin ang ID, gamot, cellphone at charger.','Patayin ang kuryente sa main switch kung aabot ang tubig sa saksakan.','Huwag lumusong o magmaneho sa rumaragasang tubig. Lumayo sa mga kable.','Pumunta sa evacuation center ng barangay kung inutusan, o kung patuloy na tumataas ang tubig.']};
+let LANG=(()=>{try{return localStorage.getItem('bb-lang')||'en'}catch(e){return 'en'}})();
+function applyLang(){document.documentElement.lang=LANG=='fil'?'fil':'en';document.querySelectorAll('[data-en]').forEach(e=>e.textContent=e.dataset[LANG]||e.dataset.en);
+ $('langBtn').textContent=LANG=='fil'?'EN':'FIL';$('langBtn').setAttribute('aria-label',LANG=='fil'?'Switch to English':'Lumipat sa Filipino');$('evac').innerHTML=EVAC[LANG].map(t=>`<li>${esc(t)}</li>`).join('');
+ paintHome();if(incs.length)$('cards').innerHTML=incs.map(i=>card(i,{vote:1})).join('')}
+function toggleLang(){LANG=LANG=='fil'?'en':'fil';try{localStorage.setItem('bb-lang',LANG)}catch(e){}applyLang()}
+function shareArea(){const top=incs[0];const a=area;const t=top?top.share_text:`BahaBantay: ${$('brgy').value}: ${a?a.text:''}. Community report, not an official order.`;copy(t)}
+function tab(t,scroll){mode=t;const id={home:'home',map:'mapt',help:'helpt',resp:'resp'}[t];document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('hide',s.id!=id));
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));$('fab911').classList.toggle('hide',t=='resp');
+ if(history.replaceState)history.replaceState(null,'',t=='home'?location.pathname:'#'+(t=='resp'?'responder':t));
+ if(t=='resp')loadGrid();if(t=='map')setTimeout(fitMap,60);window.scrollTo(0,0);if(scroll)setTimeout(()=>$('nearH').scrollIntoView({behavior:'smooth'}),120)}
+function setMode(m){tab(m=='resp'?'resp':'home')}
 const TR={rising:'↑ rising',steady:'→ steady',receding:'↓ going down',unsure:'trend unsure'};const LCOL={none:'#0f8b8d',ankle:'#f59f00',knee:'#e8590c',waist:'#c62828',higher:'#7b1010'};
-function cellPop(c){return `<b>${{observed:'Observed & confirmed',unconfirmed:'Unconfirmed (single reporter)',stale:'Old or weak data'}[c.state]}</b><br>${c.level?LVL[c.level]:'Depth unknown'}${c.depth_cm_weighted!=null?` (~${c.depth_cm_weighted} cm)`:''}${c.people_at_risk?'<br>🆘 people may need help':''}${c.cars_cannot_pass?'<br>⛔ cars cannot pass':''}<br>🕒 last observed ${ago(c.last_observed_min_ago)}<br>Confidence ${Math.round(c.confidence*100)}% · ${c.reports} report${c.reports>1?'s':''} from ${c.independent_reporters} reporter${c.independent_reporters>1?'s':''}<br><span class="src">${c.streets.map(esc).join(', ')}${c.sample?' · sample data':''}</span><br><span class="src">Shown as a ~250 m square to protect reporters' exact location.</span>`}
+function cellPop(c){return `<b>📍 ${esc(CPL)}</b><br><b>${{observed:'Observed & confirmed',unconfirmed:'Unconfirmed (single reporter)',stale:'Old or weak data'}[c.state]}</b><br>${c.level?LVL[c.level]:'Depth unknown'}${c.depth_cm_weighted!=null?` (~${c.depth_cm_weighted} cm)`:''}${c.people_at_risk?'<br>🆘 people may need help':''}${c.cars_cannot_pass?'<br>⛔ cars cannot pass':''}<br>🕒 last observed ${ago(c.last_observed_min_ago)}<br>Confidence ${Math.round(c.confidence*100)}% · ${c.reports} report${c.reports>1?'s':''} from ${c.independent_reporters} reporter${c.independent_reporters>1?'s':''}<br><span class="src">${c.streets.map(x=>esc(x)+', '+esc(CPL)).join('; ')}${c.sample?' · sample data':''}</span><br><span class="src">Shown as a ~250 m square to protect reporters' exact location.</span>`}
 async function vote(id,v){const r=await post(`/api/incidents/${id}/vote`,{vote:v});toast('Thanks. Your update helps nearby residents make safer decisions.');refresh()}
-async function checkArea(){$('nearH').scrollIntoView({behavior:'smooth'});const btn=$('checkBtn');if(btn.disabled)return;btn.disabled=true;
+async function checkArea(){$('advRes').scrollIntoView({behavior:'smooth'});const btn=$('checkBtn');if(btn.disabled)return;btn.disabled=true;
  $('advResSrc').textContent='';$('advResText').innerHTML='<span class="spin"></span>Writing the advisory from current reports. This can take up to 40 seconds…';
- try{const a=await J('/api/advisory/'+encodeURIComponent($('brgy').value));$('advResText').innerHTML=`${esc(a.en)}<br><br><i>${esc(a.fil)}</i>`;$('advResSrc').textContent=a.provider=='meta'?'· written by Muse Spark from current reports':'· template (offline)'}
+ try{const a=await J('/api/advisory/'+encodeURIComponent($('brgy').value));$('advResText').innerHTML=esc(LANG=='fil'?a.fil:a.en);$('advResSrc').textContent=a.provider=='meta'?'· written by Muse Spark from current reports':'· template (offline)'}
  catch(e){$('advResText').textContent='Could not write the advisory: '+e.message}finally{btn.disabled=false}}
-function helpSomeone(){$('nearH').textContent='Help verify: tap what you see';$('nearH').scrollIntoView({behavior:'smooth'});
+function helpSomeone(){if(mode!='map')tab('map');$('nearH').textContent='Help verify: tap what you see';$('nearH').scrollIntoView({behavior:'smooth'});
  $('cards').innerHTML=[...incs].sort((a,b)=>(b.action_label=='Needs confirmation')-(a.action_label=='Needs confirmation')).filter(i=>i.kind!='help').map(i=>card(i,{vote:1})).join('')}
 // ---------- report flow
 function openReport(){photoBlob=null;draft=null;lvl=rise=car='';$('fCm').value='';$('photo').value='';$('photoPrev').style.display='none';$('fNote').value='';$('fStreet').value='';
@@ -323,7 +419,8 @@ function gps(w){if(w!='h')nearMe('fBrgy');if(!navigator.geolocation){toast('Loca
 function prevPhoto(){const f=$('photo').files[0];if(!f)return;photoBlob=f;$('photoPrev').src=URL.createObjectURL(f);$('photoPrev').style.display='block'}
 async function samplePhoto(){const r=await fetch('/samples/sample_04.jpg');photoBlob=new File([await r.blob()],'sample.jpg',{type:'image/jpeg'});$('photoPrev').src='/samples/sample_04.jpg';$('photoPrev').style.display='block'}
 function go(n){if(n==2&&!photoBlob){toast('Add a photo first');return}if(n==4&&$('fCm').value!==''&&!(+$('fCm').value>=0&&+$('fCm').value<=300)){toast('Depth must be 0 to 300 cm');return}if(n==3&&!$('fStreet').value.trim()){toast('Type a street or landmark');return}
- for(let i=1;i<=6;i++)$('s'+i).classList.toggle('hide',i!=n);document.querySelectorAll('#steps i').forEach((e,i)=>e.classList.toggle('on',i<Math.min(n,4)))}
+ for(let i=1;i<=6;i++)$('s'+i).classList.toggle('hide',i!=n);document.querySelectorAll('#steps i').forEach((e,i)=>e.classList.toggle('on',i<Math.min(n,3)));
+ $('stepn').textContent=n<=3?`Step ${n} of 3 · Hakbang ${n} sa 3`:n<6?'Almost done · Halos tapos na':'Published · Nai-publish';$('steps').classList.toggle('hide',n>3)}
 function choice(id,cb){document.querySelectorAll(`#${id} button`).forEach(b=>b.onclick=()=>{document.querySelectorAll(`#${id} button`).forEach(x=>x.classList.remove('on'));b.classList.add('on');cb(b.dataset.v)})}
 choice('lvl',v=>lvl=v);choice('rise',v=>rise=v);choice('car',v=>car=v);choice('lvl2',v=>lvl2=v);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -336,14 +433,15 @@ async function analyze(){go(4);['p1','p2','p3','p4'].forEach(p=>$(p).className='
  clearTimeout(t);$('p2').className='done';$('p3').className='done';$('p4').className='run';await sleep(500);$('p4').className='done';await sleep(300);showUnderstood()}
 function showUnderstood(){const u=draft.understood;lvl2='';document.querySelectorAll('#lvl2 button').forEach(b=>b.classList.toggle('on',b.dataset.v==u.level));
  const vp=PROV[u.vision_provider]||u.vision_provider,tp={meta:'Muse Spark','mock-fallback':'keyword rules (Meta unavailable)',mock:'keyword rules',none:'—'}[u.text_provider]||u.text_provider;
- $('und').innerHTML=`<div>📍 ${esc(u.street)}, ${esc(u.barangay)}${u.approximate?' <span class="src">(approximate, barangay area)</span>':''}</div>
+ const sl=u.level||u.photo_level;$('aisug').innerHTML=u.photo_level?`🤖 AI suggests ${LVL[u.photo_level].toLowerCase()} — confirm or correct below <span class="src">(${esc(vp)}, confidence ${Math.round((u.confidence||0)*100)}%)</span>`:sl?`👤 You said ${LVL[sl].toLowerCase()} — the AI found no reference object in the photo. Confirm or correct below.`:'🤖 AI could not tell the depth. Pick the water level below.';
+ $('und').innerHTML=`<div>📍 ${esc(u.street)}, ${esc(u.place||u.barangay)}${u.approximate?' <span class="src">(approximate, barangay area)</span>':''}</div>
  <div>🌊 ${u.level?LVL[u.level]:'Depth unknown'} <span class="src">${u.photo_level?`🤖 photo: ${LVL[u.photo_level]} (${vp}, conf ${u.confidence})`:'🤖 photo: no reference object found'}${u.reporter_level?` · 👤 you: ${LVL[u.reporter_level]}`:''}</span></div>
  ${u.trend?`<div>${TR[u.trend]}</div>`:''}${u.car_passable?`<div>${{yes:'🚗 Cars can pass',no:'⛔ Cars cannot pass',unsure:'🚗 Not sure if cars can pass'}[u.car_passable]}</div>`:''}${u.reported_depth_cm!=null?`<div>📏 You said about ${u.reported_depth_cm} cm</div>`:''}
  ${u.hazards.length?`<div>⚠️ ${u.hazards.map(esc).join(', ')} <span class="src">🤖 ${esc(tp)}</span></div>`:''}
  ${u.people_at_risk?'<div>🆘 Someone may need help</div>':''}${u.summary?`<div class="src">“${esc(u.summary)}”</div>`:''}
  ${u.vision_provider=='mock-fallback'?'<div class="note">Meta AI did not respond, so the offline estimator answered this one.</div>':''}`;go(5)}
 async function publish(){try{const r=await post(`/api/reports/${draft.id}/publish`,lvl2?{water_level:lvl2}:{});const i=r.incident;const [ic,k]=ACT[i.action_label];
- $('acTop').innerHTML=`<div class="card a-${k}"><div class="tag t-${k}" style="font-size:20px">${ic} ${i.action_label.toUpperCase()}</div><div style="font-weight:700">${esc(i.street)}, ${esc(i.barangay)}</div><div class="meta">${i.reports>1?`Joined an incident with ${i.reports} reports`:'New incident'} · ${LADDER.find(l=>l[0]==i.ladder)[1]}${i.confidence!=null?' · confidence '+Math.round(i.confidence*100)+'%':''}</div></div>`;
+ $('acTop').innerHTML=`<div class="card a-${k}"><div class="tag t-${k}" style="font-size:20px">${ic} ${i.action_label.toUpperCase()}</div><div style="font-weight:700">${where(i)}</div><div class="meta">${i.reports>1?`Joined an incident with ${i.reports} reports`:'New incident'} · ${LADDER.find(l=>l[0]==i.ladder)[1]}${i.confidence!=null?' · confidence '+Math.round(i.confidence*100)+'%':''}</div></div>`;
  $('acDet').textContent=`${i.level?LVL[i.level]:'Depth not clear yet'}${i.rising?', water rising':''}${i.hazards.length?'. Hazards: '+i.hazards.join(', ').replace(/_/g,' '):''}.${r.status=='needs_info'?' '+r.question:''}`;
  $('acDo').textContent=DO[i.action_label];$('acHelp').textContent='Share this alert with neighbors. When you pass by later, tap “Still flooded” or “Already clear” on the card so others know.';
  shareTxt=i.share_text;$('shareP').textContent=shareTxt;go(6);refresh()}catch(e){toast('Error: '+e.message)}}
@@ -354,15 +452,14 @@ function dictate(){const R=window.SpeechRecognition||window.webkitSpeechRecognit
 function openHelp(){$('hBrgy').value=$('brgy').value;setChip('hBrgy',$('brgy').value);$('hForm').classList.remove('hide');$('hDone').classList.add('hide');hLoc=null;$('hsheet').classList.add('on')}
 async function sendHelp(){if(!$('hStreet').value.trim()){toast('Type a street or landmark');return}
  try{const r=await post('/api/help',{barangay:$('hBrgy').value,street:$('hStreet').value,note:$('hNote').value,client_id:CID,lat:hLoc?.latitude??null,lng:hLoc?.longitude??null});
- $('hForm').classList.add('hide');$('hDone').classList.remove('hide');$('hDone').innerHTML=`<b>✓ Request #${r.id} is at the top of the responder queue.</b><p>Stay where it is safe and keep your phone on. If water keeps rising, go to a higher floor. Call 911 if life is in danger.</p><button class="btn full" onclick="closeSheet('hsheet')">OK</button>`;refresh()}catch(e){toast('Error: '+e.message)}}
+ $('hForm').classList.add('hide');$('hDone').classList.remove('hide');$('hDone').innerHTML=`<b>✓ Request #${r.id} (${esc($('hStreet').value)}, ${esc((BM[$('hBrgy').value]||{}).place||$('hBrgy').value)}) is at the top of the responder queue.</b><p>Stay where it is safe and keep your phone on. If water keeps rising, go to a higher floor. Call 911 if life is in danger.</p><button class="btn full" onclick="closeSheet('hsheet')">OK</button>`;refresh()}catch(e){toast('Error: '+e.message)}}
 function closeSheet(id){$(id).classList.remove('on')}
 // ---------- responder
 let grid=[];
-function setMode(m){mode=m;$('res').classList.toggle('hide',m!='res');$('resp').classList.toggle('hide',m!='resp');$('mRes').classList.toggle('on',m=='res');$('mResp').classList.toggle('on',m=='resp');if(m=='resp')loadGrid();else{refresh();setTimeout(()=>map.invalidateSize(),50)}}
 async function loadGrid(){const b=$('rbrgy').value;grid=await J('/api/incidents?view=responder'+(b?'&barangay='+encodeURIComponent(b):''));
  for(const [t,el,n] of [['critical','gC','nC'],['needs_verification','gV','nV'],['monitor','gM','nM']]){const g=grid.filter(i=>i.tier==t);$(n).textContent=g.length;$(el).innerHTML=g.map(i=>card(i,{click:1})).join('')||'<p class="src">None</p>'}}
 function openDrawer(id){const i=grid.find(x=>x.id==id);if(!i)return;const step=LADDER.findIndex(l=>l[0]==i.ladder);
- $('dTitle').textContent=`#${i.id} ${i.street}, ${i.barangay}`;
+ $('dTitle').textContent=`#${i.id} ${i.street}, ${i.place||i.barangay}`;
  $('dBody').innerHTML=`${card(i)}<div class="ladder">${LADDER.map((l,k)=>`<span class="${k<=step?'on':''}">${l[1]}</span>`).join('')}</div>
  <p><b>Priority:</b> ${i.tier.replace('_',' ')} (${esc(i.priority_reason)})<br><b>Severity:</b> ${i.severity} · <b>Confidence:</b> ${i.confidence??'none yet'} · <b>Exact location:</b> ${i.lat.toFixed(5)}, ${i.lng.toFixed(5)}${i.approximate?' (approximate)':''}</p>
  <p><b>Recommendation:</b> ${esc(DO[i.action_label])}${i.needs_human_verification?' <i>Needs human verification.</i>':''}</p>
@@ -380,7 +477,7 @@ async function genAdvisory(){const b=$('rbrgy').value||$('brgy').value,btn=$('ad
  finally{btn.disabled=false;btn.textContent='Generate advisory'}}
 $('askf').onsubmit=async e=>{e.preventDefault();const b=$('rbrgy').value||$('brgy').value;if(!$('askq').value.trim())return;$('ans').textContent='…';
  try{const j=await post('/api/ask',{barangay:b,question:$('askq').value});$('ans').textContent=j.answer;$('askSrc').textContent=`· ${b} · ${j.provider=='meta'?'Muse Spark':'grounded template'}`}catch(e){$('ans').textContent='Error: '+e.message}};
-(async()=>{await loadHealth();await loadBrgys();await refresh();if(location.hash=='#responder')setMode('resp')})();
+(async()=>{applyLang();await loadHealth();await loadBrgys();await refresh();const h=location.hash.slice(1);if(h=='responder')tab('resp');else if(h=='map'||h=='help')tab(h);else if(h=='report')openReport()})();
 </script><script>
 function paintThemeBtn(){const d=document.documentElement.dataset.theme==='dark',b=document.getElementById('thm');if(!b)return;b.textContent=d?'☀️':'🌙';const l=d?'Switch to light theme':'Switch to dark theme';b.setAttribute('aria-label',l);b.title=l;b.setAttribute('aria-pressed',d);document.querySelector('meta[name=theme-color]').content=d?'#0a1a30':'#0b2545'}
 function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('bb-theme',t)}catch(e){}paintThemeBtn()}
