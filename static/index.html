@@ -33,7 +33,8 @@ h2{font-size:18px;margin:18px 0 8px}
 .tag{font-weight:800;font-size:15px;display:flex;gap:6px;align-items:center}
 .a-safe{border-color:var(--teal)}.a-caution{border-color:var(--amber)}.a-avoid{border-color:var(--orange)}.a-confirm{border-color:#7a8699}.a-help{border-color:var(--red)}
 .t-safe{color:#0b6e70}.t-caution{color:#8a5a00}.t-avoid{color:#b8440a}.t-confirm{color:#4a5a70}.t-help{color:var(--red)}
-.meta{color:var(--mut);font-size:14px;margin:4px 0}.src{font-size:13px;color:var(--mut)}
+.meta{color:var(--mut);font-size:14px;margin:4px 0}.fresh{font-size:13px;color:#33415c;margin:2px 0}.spin{display:inline-block;width:14px;height:14px;border:2px solid #9ab;border-top-color:var(--blue);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes sp{to{transform:rotate(360deg)}}
+.hot a{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef;color:var(--navy);text-decoration:none;font-weight:600}.hot a span{color:var(--blue)}.src{font-size:13px;color:var(--mut)}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .btn{border:2px solid var(--navy);background:#fff;color:var(--navy);border-radius:12px;padding:10px 12px;font-weight:700;font-size:15px;cursor:pointer;min-height:44px}
 .btn.pri{background:var(--navy);color:#fff}.btn.sm{padding:6px 10px;min-height:36px;font-size:14px}.btn:disabled{opacity:.5}
@@ -76,12 +77,28 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
  <div id="area" class="area watch"><div class="ic">…</div><div><b>Loading</b><small></small></div></div>
  <div class="actions">
   <button class="big b1" onclick="openReport()"><span>📷</span>Report flood<small>Mag-ulat ng baha</small></button>
-  <button class="big b2" onclick="checkArea()"><span>📍</span>Check my area<small>Tingnan ang lugar</small></button>
+  <button class="big b2" id="checkBtn" onclick="checkArea()"><span>📍</span>Check my area<small>Tingnan ang lugar</small></button>
   <button class="big b3" onclick="openHelp()"><span>🆘</span>I need help<small>Kailangan ko ng tulong</small></button>
   <button class="big b4" onclick="helpSomeone()"><span>🤝</span>Help someone<small>Verify reports nearby</small></button>
  </div>
  <h2 id="nearH">Nearby situation</h2><div id="cards"></div>
  <div class="panel" id="advRes"><b>📢 Barangay advisory</b> <span class="src" id="advResSrc"></span><p id="advResText" class="meta">Tap “Check my area” to generate.</p></div>
+ <!-- Hotlines verified 2026-11-03 from official sources:
+   Marikina Rescue 161 / 8646-2436 to 38 / 0917-584-2168 / 0928-559-3341: https://www.marikina.gov.ph/contact-us
+     (also listed by Manila Bulletin, Aug 9 2026). 0998 numbers omitted: the city page and news disagree on digits.
+   QC Helpline 122 (24/7, press 1 for emergencies): https://quezoncity.gov.ph/program/qc-helpline-122/
+   QCDRRMO 8928-4396, EOC 0947-885-9929: https://quezoncity.gov.ph/departments/quezon-city-disaster-and-risk-reduction-management-office/ -->
+ <div class="panel hot" id="hotlines"><b>☎️ Emergency hotlines</b> <span class="src">· tap to call</span>
+  <div class="src" style="margin-top:6px">Marikina (Tumana, Malanday, Nangka)</div>
+  <a href="tel:161">Marikina Rescue 161 <span>161</span></a>
+  <a href="tel:+63286462436">Rescue 161 landline <span>(02) 8646-2436</span></a>
+  <a href="tel:+639175842168">Rescue 161 Globe <span>0917-584-2168</span></a>
+  <a href="tel:+639285593341">Rescue 161 Smart <span>0928-559-3341</span></a>
+  <div class="src" style="margin-top:8px">Quezon City</div>
+  <a href="tel:122">QC Helpline 122 (press 1) <span>122</span></a>
+  <a href="tel:+63289284396">QCDRRMO <span>(02) 8928-4396</span></a>
+  <a href="tel:+639478859929">QC Emergency Operations Center <span>0947-885-9929</span></a>
+  <p class="src">Numbers from marikina.gov.ph and quezoncity.gov.ph, checked Nov 3, 2026.</p></div>
  <h2>Map</h2><div id="map"></div>
  <p class="src">Public view shows approximate locations only (≈100 m). Community reports, not official orders. In an emergency call 911 or your BDRRMO.</p>
 </section>
@@ -96,7 +113,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
  </div>
  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:6px">
  <div class="panel"><b>📢 Advisory generator</b> <span class="src" id="advSrc"></span>
-  <div class="row"><button class="btn pri sm" onclick="genAdvisory()">Generate advisory</button></div>
+  <div class="row"><button class="btn pri sm" id="advBtn" onclick="genAdvisory()">Generate advisory</button></div>
   <div id="advOut" class="hide"><h4>English</h4><pre id="advEn"></pre><button class="btn sm" onclick="copy(advEn.textContent)">Copy</button>
   <h4>Filipino</h4><pre id="advFil"></pre><button class="btn sm" onclick="copy(advFil.textContent)">Copy</button>
   <h4>SMS (<span id="smsN"></span>/160)</h4><pre id="advSms"></pre><button class="btn sm" onclick="copy(advSms.textContent)">Copy SMS</button></div></div>
@@ -180,10 +197,11 @@ async function loadBrgys(){const bs=await J('/api/barangays');for(const s of ['b
 function card(i,opts={}){const [ic,k]=ACT[i.action_label];const step=LADDER.findIndex(l=>l[0]==i.ladder);
  return `<div class="card a-${k}" ${opts.click?`onclick="openDrawer(${i.id})"`:''}><div class="top"><div><div class="tag t-${k}">${ic} ${i.action_label.toUpperCase()}</div>
  <div style="font-weight:700;font-size:17px">${esc(i.street)}${i.kind=='help'?' — help request':''}</div></div>${i.sample?'<span class="pill sample">Sample report</span>':''}</div>
- <div class="meta">${i.level?'🌊 '+LVL[i.level]:'🌊 Depth unknown'}${i.rising?' · ↑ rising':''} · ${i.reports} report${i.reports>1?'s':''} · ${ago(i.updated_min_ago)}</div>
+ <div class="meta">${i.level?'🌊 '+LVL[i.level]:'🌊 Depth unknown'}${i.rising?' · ↑ rising':''} · ${i.reports} report${i.reports>1?'s':''}</div>
+ <div class="fresh">🕒 Reported ${ago(i.reported_min_ago)}${i.reports>1&&i.updated_min_ago!=i.reported_min_ago?` · latest ${ago(i.updated_min_ago)}`:''}${i.flood_status=='cleared'?' · <b>✅ No longer flooded (residents)</b>':i.flood_status=='clear_reported'?` · ${i.no_longer_flooded_votes} says no longer flooded, 1 more needed`:''}</div>
  <div class="src">${i.level_source=='ai_detected'?'🤖 depth from photo':i.level?'👤 depth from reporter':'❔ no depth yet'}${i.votes.still+i.votes.clear?` · 👥 ${i.votes.still} still flooded, ${i.votes.clear} clear`:''} · ${LADDER[step][1]}${i.confidence!=null?` · confidence ${Math.round(i.confidence*100)}%`:''}${i.approximate?' · approx. location':''}</div>
  ${opts.click?`<div class="src" style="margin-top:4px"><b>Why:</b> ${esc(i.priority_reason)}</div>`:''}
- ${opts.vote&&i.kind!='help'?`<div class="row"><span class="src" style="width:100%">Is this still accurate?</span><button class="btn sm" onclick="vote(${i.id},'still')">🌊 Still flooded</button><button class="btn sm" onclick="vote(${i.id},'clear')">☀️ Already clear</button><button class="btn sm" onclick="vote(${i.id},'unsure')">🤷 Not sure</button><button class="btn sm" onclick='copy(${JSON.stringify(i.share_text)})'>📤 Share</button></div>`:''}</div>`}
+ ${opts.vote&&i.kind!='help'?`<div class="row"><span class="src" style="width:100%">Is this still accurate?</span><button class="btn sm" onclick="vote(${i.id},'still')">🌊 Still flooded</button><button class="btn sm" onclick="vote(${i.id},'clear')">☀️ Already clear</button><button class="btn sm" onclick="vote(${i.id},'unsure')">🤷 Not sure</button>${i.flood_status!='cleared'?`<button class="btn sm" onclick="vote(${i.id},'gone')">✅ No longer flooded</button>`:''}<button class="btn sm" onclick='copy(${JSON.stringify(i.share_text)})'>📤 Share</button></div>`:''}</div>`}
 async function refresh(){const b=$('brgy').value;const [a,list]=await Promise.all([J('/api/area/'+encodeURIComponent(b)),J('/api/incidents?barangay='+encodeURIComponent(b))]);
  incs=list;const IC={safe:'✔',watch:'⚠',danger:'⛔'},NM={safe:'Safe',watch:'Watch',danger:'Danger'};
  $('area').className='area '+a.status;$('area').innerHTML=`<div class="ic">${IC[a.status]}</div><div style="flex:1"><b>${NM[a.status]} · ${esc(b)}</b><small>${esc(a.text)}<br>${a.reports} report${a.reports==1?'':'s'} · ${a.incidents} incident${a.incidents==1?'':'s'}${a.updated_min_ago!=null?' · updated '+ago(a.updated_min_ago):''}</small></div><div class="pulse"></div>`;
@@ -192,8 +210,10 @@ async function refresh(){const b=$('brgy').value;const [a,list]=await Promise.al
   .bindPopup(`<b>${esc(i.street)}</b><br>${ACT[i.action_label][0]} ${i.action_label}<br>${i.level?LVL[i.level]:'Depth unknown'} · ${i.reports} report(s)`).addTo(layer)});
  if(list.length)map.fitBounds(L.latLngBounds(list.map(i=>[i.lat,i.lng])).pad(.4),{maxZoom:16});}
 async function vote(id,v){const r=await post(`/api/incidents/${id}/vote`,{vote:v});toast('Thanks. Your update helps nearby residents make safer decisions.');refresh()}
-async function checkArea(){$('nearH').scrollIntoView({behavior:'smooth'});$('advResText').textContent='Writing advisory…';
- const a=await J('/api/advisory/'+encodeURIComponent($('brgy').value));$('advResText').innerHTML=`${esc(a.en)}<br><br><i>${esc(a.fil)}</i>`;$('advResSrc').textContent=a.provider=='meta'?'· written by Muse Spark from current reports':'· template (offline)'}
+async function checkArea(){$('nearH').scrollIntoView({behavior:'smooth'});const btn=$('checkBtn');if(btn.disabled)return;btn.disabled=true;
+ $('advResSrc').textContent='';$('advResText').innerHTML='<span class="spin"></span>Writing the advisory from current reports. This takes about 10–15 seconds…';
+ try{const a=await J('/api/advisory/'+encodeURIComponent($('brgy').value));$('advResText').innerHTML=`${esc(a.en)}<br><br><i>${esc(a.fil)}</i>`;$('advResSrc').textContent=a.provider=='meta'?'· written by Muse Spark from current reports':'· template (offline)'}
+ catch(e){$('advResText').textContent='Could not write the advisory: '+e.message}finally{btn.disabled=false}}
 function helpSomeone(){$('nearH').textContent='Help verify: tap what you see';$('nearH').scrollIntoView({behavior:'smooth'});
  $('cards').innerHTML=[...incs].sort((a,b)=>(b.action_label=='Needs confirmation')-(a.action_label=='Needs confirmation')).filter(i=>i.kind!='help').map(i=>card(i,{vote:1})).join('')}
 // ---------- report flow
@@ -255,9 +275,12 @@ function openDrawer(id){const i=grid.find(x=>x.id==id);if(!i)return;const step=L
  ${i.members.filter(m=>m.status=='needs_info').map(m=>`<div class="panel" style="background:#e8f1fb"><b>❓ Waiting on reporter (#${m.id}):</b> ${esc(m.question)}</div>`).join('')}
  <h3>Share text</h3><pre>${esc(i.share_text)}</pre>`;$('drawer').classList.add('on')}
 async function review(id,a){const note=a=='request_info'?(prompt('What do you need to know?')||''):'';try{await post(`/api/incidents/${id}/review`,{action:a,note});toast('Saved: '+a.replace('_',' '));await loadGrid();openDrawer(id)}catch(e){toast(e.message)}}
-async function genAdvisory(){const b=$('rbrgy').value||$('brgy').value;$('advSrc').textContent='writing for '+b+'…';const a=await J('/api/advisory/'+encodeURIComponent(b));
+async function genAdvisory(){const b=$('rbrgy').value||$('brgy').value,btn=$('advBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>Writing…';
+ $('advSrc').innerHTML='<span class="spin"></span>Muse Spark is writing the advisory for '+esc(b)+'. This takes about 10–15 seconds.';
+ try{const a=await J('/api/advisory/'+encodeURIComponent(b));
  $('advOut').classList.remove('hide');$('advEn').textContent=a.en;$('advFil').textContent=a.fil;$('advSms').textContent=a.sms;$('smsN').textContent=a.sms.length;
- $('advSrc').textContent=`· ${b} · ${a.provider=='meta'?'Muse Spark':'template (offline)'}`}
+ $('advSrc').textContent=`· ${b} · ${a.provider=='meta'?'Muse Spark':'template (offline)'}`}catch(e){$('advSrc').textContent='Could not write the advisory: '+e.message}
+ finally{btn.disabled=false;btn.textContent='Generate advisory'}}
 $('askf').onsubmit=async e=>{e.preventDefault();const b=$('rbrgy').value||$('brgy').value;if(!$('askq').value.trim())return;$('ans').textContent='…';
  try{const j=await post('/api/ask',{barangay:b,question:$('askq').value});$('ans').textContent=j.answer;$('askSrc').textContent=`· ${b} · ${j.provider=='meta'?'Muse Spark':'grounded template'}`}catch(e){$('ans').textContent='Error: '+e.message}};
 (async()=>{await loadHealth();await loadBrgys();await refresh();if(location.hash=='#responder')setMode('resp')})();

@@ -21,7 +21,7 @@ class Answer(BaseModel):
 
 
 class Vote(BaseModel):
-    vote: str               # still | clear | unsure
+    vote: str               # still | clear | unsure | gone ("No longer flooded")
 
 
 class Review(BaseModel):
@@ -73,7 +73,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
             head, latest = rs[0], rs[-1]
             if barangay and head["barangay"] != barangay: continue
             vrows, rv = votes.get(root, []), reviews.get(root, [])
-            vc = {k: sum(v["vote"] == k for v in vrows) for k in ("still", "clear", "unsure")}
+            vc = {k: sum(v["vote"] == k for v in vrows) for k in ("still", "clear", "unsure", "gone")}
             a = assess.assess_incident(rs, vc, rv, now())
             if not a["active"] and not include_inactive: continue
             photo = next((r["image_path"] for r in reversed(rs) if r.get("image_path")), None)
@@ -219,7 +219,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
     @app.post("/api/incidents/{iid}/vote")
     def vote(iid: int, v: Vote):
         incident_or_404(iid)
-        if v.vote not in ("still", "clear", "unsure"): raise HTTPException(422, "vote must be still, clear or unsure")
+        if v.vote not in ("still", "clear", "unsure", "gone"): raise HTTPException(422, "vote must be still, clear, unsure or gone")
         conn.execute("INSERT INTO votes(incident_id,vote,at) VALUES(?,?,?)", (iid, v.vote, now().isoformat(timespec="seconds"))); conn.commit()
         return next(i for i in build_incidents("public", include_inactive=True) if i["id"] == iid)
 

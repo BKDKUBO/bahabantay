@@ -167,3 +167,46 @@ def test_report_eval_runs_on_mock(tmp_path):
     from scripts import eval_reports
     res = eval_reports.main([])
     assert res["n"] >= 25 and 0 <= res["severity_agreement"] <= 1 and 0 <= res["group_pair_acc"] <= 1
+
+
+# ---------- Nov 3 fixes
+def test_avoid_this_area_never_in_monitor():
+    a = A([rep(1, band="knee", conf=0.9), rep(2, 5, band="knee", conf=0.9, dup=1)])
+    assert a["action_label"] == "Avoid this area" and a["tier"] != "monitor"
+    v = A([rep(1, band="knee", conf=0.9)], reviews=[{"action": "confirm", "at": "x"}])
+    assert v["action_label"] == "Avoid this area" and v["tier"] == "critical"
+
+
+def test_freshness_fields():
+    a = A([rep(1, band="knee", conf=0.9), rep(2, 20, band="knee", conf=0.9, dup=1)])
+    assert a["reported_min_ago"] == 30 and a["updated_min_ago"] == 10
+
+
+def test_no_longer_flooded_clears_after_two_votes():
+    rs = [rep(1, band="waist", conf=0.9)]
+    one = A(rs, {"gone": 1})
+    assert one["flood_status"] == "clear_reported" and one["action_label"] == "Avoid this area"
+    two = A(rs, {"gone": 2})
+    assert two["flood_status"] == "cleared" and two["action_label"] == "Safe to pass" and two["tier"] == "monitor"
+    assert two["ladder"] == "community_corroborated"
+    outvoted = A(rs, {"gone": 2, "still": 3})
+    assert outvoted["flood_status"] != "cleared"
+
+
+def test_help_request_not_cleared_by_votes():
+    a = A([rep(1, kind="help", note="tulong")], {"gone": 5})
+    assert a["flood_status"] == "active" and a["tier"] == "critical"
+
+
+def test_gone_vote_endpoint(client):
+    inc = client.get("/api/incidents?barangay=Malanday").json()
+    iid = next(i["id"] for i in inc if i["kind"] == "flood")
+    client.post(f"/api/incidents/{iid}/vote", json={"vote": "gone"})
+    r = client.post(f"/api/incidents/{iid}/vote", json={"vote": "gone"}).json()
+    assert r["no_longer_flooded_votes"] == 2 and r["flood_status"] in ("cleared", "clear_reported")
+
+
+def test_page_has_hotlines_and_loading_state(client):
+    h = client.get("/").text
+    for n in ("tel:161", "tel:122", "No longer flooded", "advBtn", "Reported "):
+        assert n in h

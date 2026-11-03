@@ -151,7 +151,7 @@ def ladder(n_reports: int, votes: dict, reviews: list[dict]) -> str:
     last = reviews[-1]["action"] if reviews else None
     if last == "confirm":
         return "responder_verified"
-    if votes.get("still", 0) >= 2 or votes.get("clear", 0) >= 2:
+    if votes.get("still", 0) >= 2 or votes.get("clear", 0) + votes.get("gone", 0) >= 2:
         return "community_corroborated"
     if n_reports >= 2:
         return "ai_grouped"
@@ -208,6 +208,13 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
         action = "Use caution"
     else:  # "none": Rule 1, never Safe from a single report
         action = "Safe to pass" if (len(rs) >= 2 or clear >= 2) else "Needs confirmation"
+    # "No longer flooded": two or more residents (more than "still flooded" votes) clear a flood incident.
+    # Help requests are never auto-cleared by votes; a responder must handle them.
+    gone = votes.get("gone", 0)
+    cleared = not help_req and last_action != "reject" and gone >= 2 and gone > still
+    flood_status = "cleared" if cleared else ("clear_reported" if gone and not help_req else "active")
+    if cleared:
+        action, sev, people = "Safe to pass", "low", False
     # priority tier for responders
     reasons = []
     if help_req: reasons.append("help request from resident")
@@ -219,6 +226,8 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
     if len(rs) > 1: reasons.append(f"{len(rs)} reports grouped")
     if last_action == "reject":
         tier = "monitor"; reasons = ["rejected by responder"]
+    elif cleared:
+        tier = "monitor"; reasons = [f"{gone} residents say no longer flooded"]
     elif sev == "critical" and lad != "responder_verified" and conf is None:
         tier = "needs_verification"; reasons.append("no confidence yet")
     elif sev == "critical" or last_action == "escalate":
@@ -227,15 +236,20 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
         tier = "needs_verification"
         if lvl is None: reasons.append("depth unknown")
         elif lad in ("user_reported", "ai_grouped"): reasons.append("not yet corroborated")
+    elif action == "Avoid this area":   # impassable road: never just "monitor"
+        tier = "critical" if lad == "responder_verified" else "needs_verification"
+        reasons.append("road reported impassable" + ("" if lad == "responder_verified" else "; not yet verified"))
     else:
         tier = "monitor"
     score = SEVERITY_RANK[sev] * 20 + (10 if rising else 0) + min(3, len(rs) - 1) * 3 + (15 if help_req else 0) + still * 2
     age_min = int((now - ts(latest)).total_seconds() // 60)
+    first_min = int((now - ts(rs[0])).total_seconds() // 60)
     return {"severity": sev, "action_label": action, "level": lvl, "level_source": lvl_src, "hazards": hz,
-            "people_at_risk": people or help_req, "rising": rising, "confidence": conf, "ladder": lad,
+            "people_at_risk": people or help_req, "rising": rising and not cleared, "confidence": conf, "ladder": lad,
             "needs_human_verification": lad != "responder_verified", "tier": tier, "priority_score": score,
             "priority_reason": "; ".join(dict.fromkeys(reasons)) or "low depth, no hazards reported",
-            "updated_min_ago": age_min, "active": age_min <= ACTIVE_H * 60 and last_action != "reject"}
+            "updated_min_ago": age_min, "reported_min_ago": first_min, "flood_status": flood_status,
+            "no_longer_flooded_votes": gone, "active": age_min <= ACTIVE_H * 60 and last_action != "reject"}
 
 
 def evidence(rs, votes_rows, reviews):
@@ -260,7 +274,7 @@ def evidence(rs, votes_rows, reviews):
             ev.append({"source": "ai_detected", "at": r["reported_at"], "report_id": r["id"],
                        "text": f"{src}: {hz or 'no hazards'}{(' — ' + a['summary_en']) if a.get('summary_en') else ''}"})
     for v in votes_rows:
-        ev.append({"source": "community_confirmed", "at": v["at"], "text": {"still": "Community: still flooded", "clear": "Community: already clear", "unsure": "Community: not sure"}[v["vote"]]})
+        ev.append({"source": "community_confirmed", "at": v["at"], "text": {"still": "Community: still flooded", "clear": "Community: already clear", "unsure": "Community: not sure", "gone": "Community: no longer flooded"}[v["vote"]]})
     for rv in reviews:
         ev.append({"source": "responder", "at": rv["at"], "text": f"Responder: {rv['action'].replace('_', ' ')}{(' — ' + rv['note']) if rv.get('note') else ''}"})
     return sorted(ev, key=lambda e: e["at"])
