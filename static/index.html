@@ -20,7 +20,7 @@ select,input,textarea{font:inherit;width:100%;padding:12px;border:2px solid #c9d
 label{font-weight:600;display:block;margin:12px 0 6px}
 .area{border-radius:20px;padding:18px;color:#fff;display:flex;gap:14px;align-items:center;margin:10px 0}
 .area .ic{font-size:40px;line-height:1}.area b{font-size:24px;display:block}.area small{opacity:.9;font-size:14px}
-.area.safe{background:var(--teal)}.area.watch{background:var(--orange)}.area.danger{background:var(--red)}
+.area.safe{background:var(--teal)}.area.unknown{background:#5c6b80}.area.watch{background:var(--orange)}.area.danger{background:var(--red)}
 .pulse{width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 0 0 #fff8;animation:p 2s 3}
 @keyframes p{70%{box-shadow:0 0 0 14px #fff0}100%{box-shadow:0 0 0 0 #fff0}}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
@@ -65,6 +65,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 16px;border-radius:12px;z-index:3000;display:none;max-width:90%}
 .thumbs img{width:110px;border-radius:8px;margin:4px 4px 0 0}
 .hide{display:none!important}
+.bwrap{display:flex;gap:8px;align-items:center}.bwrap input{flex:1}.cov{background:#fff3bf;color:#5c3c00;border-radius:12px;padding:10px;font-size:14px;margin:6px 0}
 @media(max-width:760px){.grid{grid-template-columns:1fr}}
 </style></head><body>
 <header><div class="hrow"><h1>🌊 BahaBantay</h1>
@@ -73,7 +74,10 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
 <main>
 <!-- RESIDENT -->
 <section id="res" class="wrap">
- <label for="brgy" style="margin-top:4px">My barangay</label><select id="brgy" onchange="refresh()"></select>
+ <label for="brgy" style="margin-top:4px">My barangay <span class="src">· search any barangay in the Philippines</span></label>
+ <div class="bwrap"><input id="brgy" list="brgyL" autocomplete="off" placeholder="Type a barangay, e.g. Tumana or Poblacion Davao"><datalist id="brgyL"></datalist>
+ <button class="btn sm" onclick="nearMe('brgy')" title="Suggest the nearest barangay from my location">📡 Near me</button></div>
+ <div id="brgySug" class="src"></div>
  <div id="area" class="area watch"><div class="ic">…</div><div><b>Loading</b><small></small></div></div>
  <div class="actions">
   <button class="big b1" onclick="openReport()"><span>📷</span>Report flood<small>Mag-ulat ng baha</small></button>
@@ -131,7 +135,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
   <button class="btn sm" style="margin-top:8px" onclick="samplePhoto()">Use a sample photo (demo)</button>
   <img id="photoPrev" alt="photo preview"><button class="btn pri full" onclick="go(2)">Next</button></div>
  <div id="s2" class="hide"><h2>2 · Where is it?</h2>
-  <label>Barangay</label><select id="fBrgy"></select>
+  <label>Barangay</label><input id="fBrgy" list="fBrgyL" autocomplete="off" placeholder="Search barangay"><datalist id="fBrgyL"></datalist><div id="fBrgySug" class="src"></div>
   <label>Street or landmark</label><input id="fStreet" placeholder="e.g. Bayabas St near the chapel">
   <div class="row"><button class="btn sm" onclick="gps()">📡 Use my location</button><span class="src" id="locMsg">Or tap the map. If you skip, we use the barangay area (approximate).</span></div>
   <div id="pickmap" style="margin-top:8px"></div><button class="btn pri full" onclick="go(3)">Next</button></div>
@@ -156,7 +160,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
 <!-- HELP FLOW -->
 <div class="sheet" id="hsheet"><header><button class="x" onclick="closeSheet('hsheet')" aria-label="Close">✕</button><b>🆘 I need help / Kailangan ko ng tulong</b></header>
 <main class="wrap"><div class="note" style="background:#ffe3e3;color:#7a1010">If life is in danger, call <b>911</b> or your barangay now. This request goes to the responder queue; it is not a guaranteed rescue.</div>
- <div id="hForm"><label>Barangay</label><select id="hBrgy"></select><label>Street or landmark</label><input id="hStreet" placeholder="e.g. M. H. del Pilar St, blue gate">
+ <div id="hForm"><label>Barangay</label><input id="hBrgy" list="hBrgyL" autocomplete="off" placeholder="Search barangay"><datalist id="hBrgyL"></datalist><div id="hBrgySug" class="src"></div><label>Street or landmark</label><input id="hStreet" placeholder="e.g. M. H. del Pilar St, blue gate">
  <label>What do you need? (who, how many)</label><textarea id="hNote" rows="3" placeholder="Hal. 3 kami, may lola na hindi makalakad, nasa 2nd floor"></textarea>
  <div class="row"><button class="btn sm" onclick="gps('h')">📡 Share my location</button><span class="src" id="hLoc">Optional. Exact location is shown to responders only.</span></div>
  <button class="btn full" style="background:var(--red);color:#fff;border-color:var(--red)" onclick="sendHelp()">Send help request</button></div>
@@ -192,23 +196,39 @@ async function loadHealth(){health=await J('/api/health');const L=$('live');
 // ---------- resident
 const map=L.map('map').setView([14.657,121.101],14);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
 const layer=L.layerGroup().addTo(map);const COL={safe:'#0f8b8d',caution:'#f59f00',avoid:'#e8590c',confirm:'#7a8699',help:'#c62828'};
-async function loadBrgys(){const bs=await J('/api/barangays');for(const s of ['brgy','fBrgy','hBrgy']){$(s).innerHTML=bs.map(b=>`<option>${esc(b)}</option>`).join('')}
+const BM={};let active=[];
+async function meta(label){if(BM[label])return BM[label];try{BM[label]=await J('/api/barangays/resolve?label='+encodeURIComponent(label))}catch{BM[label]=null}return BM[label]}
+function fillList(id,items){$(id+'L').innerHTML=items.map(b=>`<option value="${esc(b.label||b)}">${b.label?esc(b.city+(b.covered?' · responder coverage':'')):'active reports'}</option>`).join('')}
+function brgyBox(id,onPick){const el=$(id);let t=null,last=el.value;
+ el.addEventListener('focus',()=>{if(!el.value)fillList(id,active)});
+ el.addEventListener('input',()=>{clearTimeout(t);const q=el.value.trim();if(BM[q]!==undefined&&BM[q]){last=q;onPick&&onPick(q);return}
+  t=setTimeout(async()=>{if(q.length<2){fillList(id,active);return}const hits=await J('/api/barangays/search?q='+encodeURIComponent(q));hits.forEach(h=>BM[h.label]=h);fillList(id,hits)},200)});
+ el.addEventListener('change',async()=>{const q=el.value.trim();if(q&&q!==last&&(active.includes(q)||await meta(q))){last=q;onPick&&onPick(q)}})}
+async function nearMe(id){if(!navigator.geolocation){toast('Location not available');return}$(id+'Sug').textContent='Finding your barangay…';
+ navigator.geolocation.getCurrentPosition(async p=>{const n=await J(`/api/barangays/nearest?lat=${p.coords.latitude}&lng=${p.coords.longitude}`);n.forEach(h=>BM[h.label]=h);
+  $(id+'Sug').innerHTML=n.length?'Nearest: '+n.map(h=>`<a href="#" onclick="pickB('${id}',${esc(JSON.stringify(h.label))});return false">${esc(h.label)}</a> (${h.distance_km} km)`).join(' · ')+' <i>(estimate from barangay centers, please confirm)</i>':'No barangay found near you.';
+  if(id!='brgy'&&pick)setPick(p.coords.latitude,p.coords.longitude,'gps')},()=>{$(id+'Sug').textContent='Could not get location'})}
+function pickB(id,label){$(id).value=label;$(id+'Sug').textContent='';if(id=='brgy')refresh();else centerPick(label)}
+async function centerPick(label){const m=await meta(label);if(m&&m.lat!=null&&pick&&!pickAt)pick.setView([m.lat,m.lng],15)}
+async function loadBrgys(){const bs=await J('/api/barangays');active=bs;if(!$('brgy').value)$('brgy').value=bs.includes('Malanday')?'Malanday':(bs[0]||'');
+ brgyBox('brgy',()=>refresh());brgyBox('fBrgy',centerPick);brgyBox('hBrgy');
  $('rbrgy').innerHTML='<option value="">All barangays</option>'+bs.map(b=>`<option>${esc(b)}</option>`).join('')}
 function card(i,opts={}){const [ic,k]=ACT[i.action_label];const step=LADDER.findIndex(l=>l[0]==i.ladder);
  return `<div class="card a-${k}" ${opts.click?`onclick="openDrawer(${i.id})"`:''}><div class="top"><div><div class="tag t-${k}">${ic} ${i.action_label.toUpperCase()}</div>
- <div style="font-weight:700;font-size:17px">${esc(i.street)}${i.kind=='help'?' — help request':''}</div></div>${i.sample?'<span class="pill sample">Sample report</span>':''}</div>
+ <div style="font-weight:700;font-size:17px">${esc(i.street)}${i.kind=='help'?' — help request':''}</div></div>${i.sample?'<span class="pill sample">Sample report</span>':''}${i.covered===false?'<span class="pill warn">Outside responder coverage</span>':''}</div>
  <div class="meta">${i.level?'🌊 '+LVL[i.level]:'🌊 Depth unknown'}${i.rising?' · ↑ rising':''} · ${i.reports} report${i.reports>1?'s':''}</div>
  <div class="fresh">🕒 Reported ${ago(i.reported_min_ago)}${i.reports>1&&i.updated_min_ago!=i.reported_min_ago?` · latest ${ago(i.updated_min_ago)}`:''}${i.flood_status=='cleared'?' · <b>✅ No longer flooded (residents)</b>':i.flood_status=='clear_reported'?` · ${i.no_longer_flooded_votes} says no longer flooded, 1 more needed`:''}</div>
  <div class="src">${i.level_source=='ai_detected'?'🤖 depth from photo':i.level?'👤 depth from reporter':'❔ no depth yet'}${i.votes.still+i.votes.clear?` · 👥 ${i.votes.still} still flooded, ${i.votes.clear} clear`:''} · ${LADDER[step][1]}${i.confidence!=null?` · confidence ${Math.round(i.confidence*100)}%`:''}${i.approximate?' · approx. location':''}</div>
  ${opts.click?`<div class="src" style="margin-top:4px"><b>Why:</b> ${esc(i.priority_reason)}</div>`:''}
  ${opts.vote&&i.kind!='help'?`<div class="row"><span class="src" style="width:100%">Is this still accurate?</span><button class="btn sm" onclick="vote(${i.id},'still')">🌊 Still flooded</button><button class="btn sm" onclick="vote(${i.id},'clear')">☀️ Already clear</button><button class="btn sm" onclick="vote(${i.id},'unsure')">🤷 Not sure</button>${i.flood_status!='cleared'?`<button class="btn sm" onclick="vote(${i.id},'gone')">✅ No longer flooded</button>`:''}<button class="btn sm" onclick='copy(${JSON.stringify(i.share_text)})'>📤 Share</button></div>`:''}</div>`}
 async function refresh(){const b=$('brgy').value;const [a,list]=await Promise.all([J('/api/area/'+encodeURIComponent(b)),J('/api/incidents?barangay='+encodeURIComponent(b))]);
- incs=list;const IC={safe:'✔',watch:'⚠',danger:'⛔'},NM={safe:'Safe',watch:'Watch',danger:'Danger'};
+ incs=list;const IC={safe:'✔',watch:'⚠',danger:'⛔',unknown:'?'},NM={safe:'Safe',watch:'Watch',danger:'Danger',unknown:'No data'};
  $('area').className='area '+a.status;$('area').innerHTML=`<div class="ic">${IC[a.status]}</div><div style="flex:1"><b>${NM[a.status]} · ${esc(b)}</b><small>${esc(a.text)}<br>${a.reports} report${a.reports==1?'':'s'} · ${a.incidents} incident${a.incidents==1?'':'s'}${a.updated_min_ago!=null?' · updated '+ago(a.updated_min_ago):''}</small></div><div class="pulse"></div>`;
- $('cards').innerHTML=list.length?list.map(i=>card(i,{vote:1})).join(''):'<p class="meta">No active reports here.</p>';
+ const m=await meta(b);$('cards').innerHTML=(m&&!m.covered?`<div class="cov">📍 <b>${esc(b)}</b> is outside BahaBantay responder coverage (demo covers Marikina). You can still report and read reports here, but no BahaBantay responder team will act on them. In an emergency call <a href="tel:911">911</a>.</div>`:'')+
+ (list.length?list.map(i=>card(i,{vote:1})).join(''):'<p class="meta">No active reports here yet. Be the first to report.</p>');
  layer.clearLayers();list.forEach(i=>{const k=ACT[i.action_label][1];L.circleMarker([i.lat,i.lng],{radius:10+Math.min(8,i.reports*2),color:'#0b2545',weight:2,fillColor:COL[k],fillOpacity:.85})
   .bindPopup(`<b>${esc(i.street)}</b><br>${ACT[i.action_label][0]} ${i.action_label}<br>${i.level?LVL[i.level]:'Depth unknown'} · ${i.reports} report(s)`).addTo(layer)});
- if(list.length)map.fitBounds(L.latLngBounds(list.map(i=>[i.lat,i.lng])).pad(.4),{maxZoom:16});}
+ if(list.length)map.fitBounds(L.latLngBounds(list.map(i=>[i.lat,i.lng])).pad(.4),{maxZoom:16});else if(m&&m.lat!=null)map.setView([m.lat,m.lng],15);}
 async function vote(id,v){const r=await post(`/api/incidents/${id}/vote`,{vote:v});toast('Thanks. Your update helps nearby residents make safer decisions.');refresh()}
 async function checkArea(){$('nearH').scrollIntoView({behavior:'smooth'});const btn=$('checkBtn');if(btn.disabled)return;btn.disabled=true;
  $('advResSrc').textContent='';$('advResText').innerHTML='<span class="spin"></span>Writing the advisory from current reports. This can take up to 40 seconds…';
@@ -220,9 +240,9 @@ function helpSomeone(){$('nearH').textContent='Help verify: tap what you see';$(
 function openReport(){photoBlob=null;draft=null;lvl=rise='';$('photo').value='';$('photoPrev').style.display='none';$('fNote').value='';$('fStreet').value='';
  $('fBrgy').value=$('brgy').value;document.querySelectorAll('#lvl button,#rise button').forEach(b=>b.classList.remove('on'));go(1);$('rsheet').classList.add('on');
  setTimeout(()=>{if(!pick){pick=L.map('pickmap').setView([14.657,121.101],15);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pick);
-  pick.on('click',e=>setPick(e.latlng.lat,e.latlng.lng,'map'))}pick.invalidateSize()},50);pickAt=null}
+  pick.on('click',e=>setPick(e.latlng.lat,e.latlng.lng,'map'))}pick.invalidateSize();if(pickM){pickM.remove();pickM=null}centerPick($('fBrgy').value)},50);pickAt=null}
 let pickAt=null,pickM=null,hLoc=null;function setPick(lat,lng,src){pickAt={lat,lng,src};if(pickM)pickM.remove();pickM=L.marker([lat,lng]).addTo(pick);$('locMsg').textContent=src=='gps'?'📍 Using your location':'📍 Pin set on map'}
-function gps(w){if(!navigator.geolocation){toast('Location not available');return}navigator.geolocation.getCurrentPosition(p=>{if(w=='h'){hLoc=p.coords;$('hLoc').textContent='📍 Location shared with responders'}else{setPick(p.coords.latitude,p.coords.longitude,'gps');pick.setView([p.coords.latitude,p.coords.longitude],16)}},()=>toast('Could not get location'))}
+function gps(w){if(w!='h')nearMe('fBrgy');if(!navigator.geolocation){toast('Location not available');return}navigator.geolocation.getCurrentPosition(p=>{if(w=='h'){hLoc=p.coords;$('hLoc').textContent='📍 Location shared with responders'}else{setPick(p.coords.latitude,p.coords.longitude,'gps');pick.setView([p.coords.latitude,p.coords.longitude],16)}},()=>toast('Could not get location'))}
 function prevPhoto(){const f=$('photo').files[0];if(!f)return;photoBlob=f;$('photoPrev').src=URL.createObjectURL(f);$('photoPrev').style.display='block'}
 async function samplePhoto(){const r=await fetch('/samples/sample_04.jpg');photoBlob=new File([await r.blob()],'sample.jpg',{type:'image/jpeg'});$('photoPrev').src='/samples/sample_04.jpg';$('photoPrev').style.display='block'}
 function go(n){if(n==2&&!photoBlob){toast('Add a photo first');return}if(n==3&&!$('fStreet').value.trim()){toast('Type a street or landmark');return}
@@ -230,7 +250,7 @@ function go(n){if(n==2&&!photoBlob){toast('Add a photo first');return}if(n==3&&!
 function choice(id,cb){document.querySelectorAll(`#${id} button`).forEach(b=>b.onclick=()=>{document.querySelectorAll(`#${id} button`).forEach(x=>x.classList.remove('on'));b.classList.add('on');cb(b.dataset.v)})}
 choice('lvl',v=>lvl=v);choice('rise',v=>rise=v);choice('lvl2',v=>lvl2=v);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-function brgyCenter(b){const pts=incs.length&&$('brgy').value==b?incs:[];return pts.length?{lat:pts.reduce((s,i)=>s+i.lat,0)/pts.length,lng:pts.reduce((s,i)=>s+i.lng,0)/pts.length}:{lat:14.657,lng:121.101}}
+function brgyCenter(b){if(BM[b]&&BM[b].lat!=null&&!(incs.length&&$('brgy').value==b))return{lat:BM[b].lat,lng:BM[b].lng};const pts=incs.length&&$('brgy').value==b?incs:[];return pts.length?{lat:pts.reduce((s,i)=>s+i.lat,0)/pts.length,lng:pts.reduce((s,i)=>s+i.lng,0)/pts.length}:{lat:14.657,lng:121.101}}
 async function analyze(){go(4);['p1','p2','p3','p4'].forEach(p=>$(p).className='');$('p1').className='done';$('p2').className='run';
  const loc=pickAt||{...brgyCenter($('fBrgy').value),src:'barangay'};const fd=new FormData();fd.append('photo',photoBlob);
  Object.entries({lat:loc.lat,lng:loc.lng,loc_source:loc.src,barangay:$('fBrgy').value,street:$('fStreet').value,note:$('fNote').value,water_level:lvl,rising:rise,draft:'true'}).forEach(([k,v])=>fd.append(k,v));

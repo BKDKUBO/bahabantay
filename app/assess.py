@@ -285,10 +285,11 @@ def area_status(incidents: list[dict]) -> dict:
     danger = [i for i in act if i["severity"] in ("critical", "high") and
               (i["people_at_risk"] or i["ladder"] in ("community_corroborated", "responder_verified"))]
     watch = [i for i in act if i["severity"] in ("moderate", "high", "critical") or i["action_label"] in ("Avoid this area", "Help may be needed")]
-    status = "danger" if danger else ("watch" if watch else "safe")
+    status = "danger" if danger else ("watch" if watch else ("safe" if act else "unknown"))
     text = {"danger": "Danger: deep water with people possibly at risk, or confirmed deep flooding",
             "watch": "Watch: flood reports nearby, take care",
-            "safe": "No recent serious reports"}[status]
+            "safe": "No recent serious reports",
+            "unknown": "No recent reports here. That does not mean it is not flooded"}[status]
     upd = min((i["updated_min_ago"] for i in act), default=None)
     return {"status": status, "text": text, "incidents": len(act), "reports": sum(i["reports"] for i in act),
             "updated_min_ago": upd, "danger_ids": [i["id"] for i in danger]}

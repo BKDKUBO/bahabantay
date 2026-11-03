@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from . import assess, db, depth
+from . import assess, db, depth, geo
 from .agent import Tools, detect_lang
 from .aggregate import summarize
 from .providers import get_providers
@@ -82,7 +82,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
                    "providers": sorted({r.get("provider") or "?" for r in rs}), "photo": photo,
                    "first_at": head["reported_at"], "latest_at": latest["reported_at"],
                    "approximate": any(r.get("loc_source") == "barangay" for r in rs),
-                   "review": rv[-1]["action"] if rv else None, **a}
+                   "review": rv[-1]["action"] if rv else None, "covered": covered(head["barangay"]), **a}
             inc["share_text"] = assess.share_text(inc)
             if view == "responder":
                 inc["evidence"] = assess.evidence(rs, vrows, rv)
@@ -95,6 +95,32 @@ def create_app(db_path=None, provider=None) -> FastAPI:
             out.append(inc)
         out.sort(key=lambda i: (-i["priority_score"], i["updated_min_ago"]))
         return out
+
+    def covered(label):
+        r = geo.resolve(label); return bool(r and r["covered"])
+
+    def place(label, lat=None, lng=None):
+        """Canonical barangay label + PSGC code; falls back to the PSGC centroid (approximate) when no point given."""
+        r = geo.resolve(label)
+        if not r: return label.strip(), None, lat, lng, None
+        if (lat is None or lng is None) and r["lat"] is not None: return r["label"], r["code"], r["lat"], r["lng"], "barangay"
+        return r["label"], r["code"], lat, lng, None
+
+    @app.get("/api/barangays/search")
+    def barangay_search(q: str = "", limit: int = 8):
+        if len(q.strip()) < 2: return []
+        return geo.search(q, max(1, min(limit, 20)))
+
+    @app.get("/api/barangays/nearest")
+    def barangay_nearest(lat: float, lng: float):
+        if not (-90 <= lat <= 90 and -180 <= lng <= 180): raise HTTPException(422, "invalid coordinates")
+        return geo.nearest(lat, lng, 3)
+
+    @app.get("/api/barangays/resolve")
+    def barangay_resolve(label: str):
+        r = geo.resolve(label)
+        if not r: raise HTTPException(404, "unknown barangay")
+        return geo.public(r)
 
     def finalize(rid):
         rec = get(rid)
@@ -154,8 +180,9 @@ def create_app(db_path=None, provider=None) -> FastAPI:
         ext = reporter.extract(note, est)
         name = f"{int(time.time())}-{uuid.uuid4().hex[:8]}.jpg"
         (UPLOADS / name).write_bytes(data)
+        bname, code, _, _, _ = place(barangay)
         rec = {**est, "reported_at": now().isoformat(timespec="seconds"), "lat": lat, "lng": lng,
-               "barangay": barangay.strip(), "street": street.strip(), "note": note,
+               "barangay": bname, "psgc_code": code, "street": street.strip(), "note": note,
                "lang": lang if lang in ("fil", "en") else detect_lang(note), "image_path": f"/uploads/{name}",
                "provider": seg.source or vision.name, "water_level": water_level if water_level in assess.LEVELS else None,
                "rising": rising if rising in ("yes", "no", "unsure") else None, "kind": "flood",
@@ -171,7 +198,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
     def understood(r):
         lvl, src = assess.report_level(r)
         a = r.get("assessment") or {}
-        return {"street": r["street"], "barangay": r["barangay"], "approximate": r.get("loc_source") == "barangay",
+        return {"street": r["street"], "barangay": r["barangay"], "covered": covered(r["barangay"]), "approximate": r.get("loc_source") == "barangay",
                 "level": lvl, "level_source": src, "photo_level": assess.BAND_TO_LEVEL.get(r["band"]) if r["band"] != "cant_tell" else None,
                 "reporter_level": r.get("water_level"), "rising": r.get("rising") or a.get("rising"),
                 "hazards": [assess.HAZARD_LABEL[h] for h in a.get("hazards", [])], "people_at_risk": bool(a.get("people_at_risk")),
@@ -194,13 +221,14 @@ def create_app(db_path=None, provider=None) -> FastAPI:
     def help_request(h: HelpRequest):
         if not h.barangay.strip() or not h.street.strip(): raise HTTPException(422, "barangay and street are required")
         if len(h.note) > 500: raise HTTPException(422, "note too long")
-        known = [r for r in all_reports() if r["barangay"] == h.barangay.strip()]
-        lat, lng, src = h.lat, h.lng, "gps"
+        bname, code, lat, lng, approx = place(h.barangay, h.lat, h.lng)
+        known = [r for r in all_reports() if r["barangay"] == bname]
+        src = approx or "gps"
         if lat is None or lng is None:  # never invent a point: use barangay centroid and mark approximate
             if not known: raise HTTPException(422, "location needed for a new barangay")
             lat = sum(r["lat"] for r in known) / len(known); lng = sum(r["lng"] for r in known) / len(known); src = "barangay"
         ext = reporter.extract(h.note, {})
-        rec = {"reported_at": now().isoformat(timespec="seconds"), "lat": lat, "lng": lng, "barangay": h.barangay.strip(),
+        rec = {"reported_at": now().isoformat(timespec="seconds"), "lat": lat, "lng": lng, "barangay": bname, "psgc_code": code,
                "street": h.street.strip(), "note": h.note, "lang": detect_lang(h.note), "depth_cm": None, "band": "cant_tell",
                "confidence": None, "people_at_risk": True, "kind": "help", "status": "help", "provider": "resident",
                "loc_source": src, "assessment": {**ext, "people_at_risk": True}}

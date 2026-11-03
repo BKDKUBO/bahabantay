@@ -10,12 +10,12 @@ SCHEMA = """CREATE TABLE IF NOT EXISTS reports(
  reference TEXT, reason TEXT, masks TEXT, people_at_risk INTEGER DEFAULT 0, simulated INTEGER DEFAULT 0,
  status TEXT DEFAULT 'ok', question TEXT, duplicate_of INTEGER, provider TEXT,
  water_level TEXT, rising TEXT, kind TEXT DEFAULT 'flood', loc_source TEXT, assessment TEXT)"""
-EXTRA = {"water_level": "TEXT", "rising": "TEXT", "kind": "TEXT DEFAULT 'flood'", "loc_source": "TEXT", "assessment": "TEXT"}
+EXTRA = {"water_level": "TEXT", "rising": "TEXT", "kind": "TEXT DEFAULT 'flood'", "loc_source": "TEXT", "assessment": "TEXT", "psgc_code": "TEXT"}
 SIDE = ["CREATE TABLE IF NOT EXISTS votes(id INTEGER PRIMARY KEY AUTOINCREMENT, incident_id INTEGER NOT NULL, vote TEXT NOT NULL, at TEXT NOT NULL)",
         "CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY AUTOINCREMENT, incident_id INTEGER NOT NULL, action TEXT NOT NULL, note TEXT, at TEXT NOT NULL)"]
 COLS = ["reported_at", "lat", "lng", "barangay", "street", "note", "lang", "image_path", "depth_cm", "band", "confidence",
         "reference", "reason", "masks", "people_at_risk", "simulated", "status", "question", "duplicate_of", "provider",
-        "water_level", "rising", "kind", "loc_source", "assessment"]
+        "water_level", "rising", "kind", "loc_source", "assessment", "psgc_code"]
 
 
 class _Rows(list):
