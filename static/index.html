@@ -107,6 +107,7 @@ html[data-theme=dark] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) bri
 html[data-theme=dark] .leaflet-container{background:#1b2633}
 html[data-theme=dark] .leaflet-popup-content-wrapper,html[data-theme=dark] .leaflet-popup-tip{background:var(--card);color:var(--ink)}
 html[data-theme=dark] .leaflet-control-attribution{background:#0e141ccc!important;color:#a9b6c6}html[data-theme=dark] .leaflet-control-attribution a{color:#8cc4f2}
+
 html[data-theme=dark] .leaflet-bar a{background:#1b2633;color:var(--ink);border-color:#3a4a5e}
 /* emergency-first redesign */
 body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
@@ -382,7 +383,7 @@ async function refresh(){const b=$('brgy').value;const [a,list]=await Promise.al
  const cm=await J('/api/cells?barangay='+encodeURIComponent(b));layer.clearLayers();CPL=(m&&m.place)||b;
  cm.cells.forEach(c=>{const col=c.state=='stale'?'#8a94a3':LCOL[c.level]||'#7a8699';
   L.rectangle(c.bounds,{color:c.people_at_risk&&c.state!='stale'?'#c62828':col,weight:2,dashArray:c.state=='unconfirmed'?'6 5':null,
-   fillColor:col,fillOpacity:c.state=='observed'?.6:c.state=='unconfirmed'?.25:.18}).bindPopup(cellPop(c)).addTo(layer)});
+   fillColor:col,fillOpacity:c.state=='observed'?.6:c.state=='unconfirmed'?.25:.18}).bindPopup(cellPop(c),{autoPanPaddingTopLeft:[56,12],maxWidth:260}).addTo(layer)});
  $('legend').innerHTML=`<span class="lg obs"></span>Observed & confirmed <span class="lg unc"></span>Single report / unconfirmed <span class="lg sta"></span>Old or weak data · ${Math.round(cm.cell_m)} m squares. Blank = no data, not “no flood”.`;
  $('howTxt').innerHTML=`Each report is checked by Meta SAM 3.1 (photo depth) and Muse Spark (your note), grouped with nearby reports, and confirmed by neighbors' votes and barangay responders. Reports count half as much every ${cm.half_life_min} min and expire after ${cm.expire_h} h; several reports from one phone count as one person. Map squares are ${Math.round(cm.cell_m)} m to protect reporters' exact location. Tap a card's “Details” to see the AI confidence %.`;
  lastBounds=cm.cells.length?L.latLngBounds(cm.cells.flatMap(c=>c.bounds)).pad(.3):(m&&m.lat!=null?L.latLng(m.lat,m.lng):null);fitMap()}
