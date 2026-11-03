@@ -210,3 +210,11 @@ def test_meta_answer_falls_back_on_api_error(monkeypatch):
          "rate_cm_per_h": None, "trend_arrow": "", "people_at_risk": False}], "needs_info": 0}
     out = MetaReports().answer(s, "where can a car pass?", "en")
     assert out["provider"] == "mock" and out["streets"] == ["A St"]
+
+
+def test_dark_theme_toggle_present(client):
+    html = client.get("/").text
+    assert 'id="thm"' in html and 'aria-label="Switch to dark theme"' in html
+    assert "localStorage.getItem('bb-theme')" in html and "prefers-color-scheme: dark" in html
+    assert html.index("bb-theme") < html.index("<style>")      # applied before first paint
+    assert "html[data-theme=dark]" in html and ".leaflet-tile-pane{filter" in html

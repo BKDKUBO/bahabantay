@@ -21,7 +21,11 @@ Live demo: https://bahabantay-466317436519.asia-southeast1.run.app (append `#res
 | **Advisory (EN / FIL / SMS)** | **Emergency hotlines** |
 | ![Advisory and SMS](docs/screenshots/09-advisory-sms.png) | ![Hotlines card](docs/screenshots/10-hotlines.png) |
 
-More: [`docs/screenshots/04a-near-me-mindanao.png`](docs/screenshots/04a-near-me-mindanao.png) ("Near me" suggestions from GPS).
+| **Barangay search (subtitles, match count)** | **Dark theme: resident** | **Dark theme: responder** |
+| ![Search with city/province subtitles](docs/screenshots/04b-search-subtitles.png) | ![Dark resident view](docs/screenshots/11-dark-theme.png) | ![Dark responder grid](docs/screenshots/12-dark-responder.png) |
+
+More: [`04a-near-me-mindanao.png`](docs/screenshots/04a-near-me-mindanao.png) ("Near me" suggestions from GPS) ·
+[`04c-search-selected.png`](docs/screenshots/04c-search-selected.png) (selected-barangay chip).
 
 ## The loop
 **Report → AI understands → Resident confirms → Alert → Help**
@@ -49,6 +53,11 @@ More: [`docs/screenshots/04a-near-me-mindanao.png`](docs/screenshots/04a-near-me
 - **All 42,010 barangays** (PSA PSGC, Q1 2026) are searchable server-side (`/api/barangays/search`, `/api/barangays/nearest`).
   Reports outside the demo's responder coverage (Marikina) are accepted and labeled **Outside responder coverage**.
   A barangay with no reports shows **No data**, never "Safe".
+- **Search UX:** "Searching…" spinner while typing; every suggestion shows barangay + city, province and region, so the 374
+  San Isidros are distinguishable; a match count ("20 of 374 matches, add a city or province to narrow"); a clear no-match hint;
+  a "✅ Selected: Brgy, City, Province" chip with **Change**; keyboard navigation. Leading words match the barangay name and
+  trailing words the place, so `san isidro, cebu` returns only San Isidro barangays in Cebu (a barangay *named* "Cebu"
+  elsewhere is not mixed in).
 - A barangay is a label, not a flood footprint. Each report is snapped to a **~250 m square** (`/api/cells`). Solid = observed &
   confirmed, dashed = single reporter, gray = old or weak. Blank = no data, not "no flood". Each square shows last observed time,
   weighted depth and confidence. The public map shows only squares; exact points are responder-only.
@@ -125,6 +134,12 @@ Other env vars: `BAHABANTAY_META_FALLBACK` (default true), `BAHABANTAY_DB`, `BAH
 These are prototype checks on data we wrote and labeled ourselves. They are not field accuracy. Details: `docs/eval/`.
 
 ## Honest limits
+- **Advisory tone:** Muse Spark is prompted to write like a calm barangay officer: plain language, streets named, status labels
+  paraphrased rather than copied, grounded only in the current incident facts (no invented numbers or places), plus a ≤160-char
+  Taglish SMS. If the Meta call fails, the deterministic template advisory is used and the header says so.
+- **Dark theme:** 🌙/☀️ toggle in the header. Defaults to the device's light/dark setting, remembers your choice, and is applied
+  before the page paints (no white flash). Covers every screen including the map (OpenStreetMap tiles are darkened with a CSS
+  filter; attribution kept). Status labels always carry text and icons, not just color.
 - The advisory generator takes about 26–40 s on the live Meta models (a spinner shows while it works).
 - Barangay centroids are approximate (84 have no polygon match and are flagged); they only label and center the map, never mark a flood.
 - 250 m squares show where reports are, not the true flood boundary; there is no interpolation, elevation or drainage model yet.

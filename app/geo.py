@@ -80,16 +80,22 @@ def search_full(q: str, limit: int = 10) -> tuple[int, list[dict]]:
     if not toks: return 0, []
     rows, _, keys = _load(); hits = []
     for r, (nm, loc) in zip(rows, keys):
-        nw = nm.split(); name_t, loc_exact, ok = [], 0, True
+        nw = nm.split(); name_t, loc_exact, ok, lead, cross = [], 0, True, True, False
         for t in toks:
-            if any(w.startswith(t) for w in nw): name_t.append(t)
-            elif any(w.startswith(t) for w in loc): loc_exact += t in loc
+            if lead and any(w.startswith(t) for w in nw): name_t.append(t); continue
+            lead = False
+            if any(w.startswith(t) for w in loc): loc_exact += t in loc
+            elif any(w.startswith(t) for w in nw): name_t.append(t); cross = True
             else: ok = False; break
         if not ok or not name_t: continue          # at least one token must hit the barangay name
         nq = " ".join(name_t)
         tier = 0 if nm == nq else 1 if nm.startswith(nq) else 2
-        score = (tier, r["city"] not in PRIORITY_CITIES, -len(name_t), -loc_exact, len(nm), r["label"])
+        # leading query tokens should name the barangay, trailing ones the place; a row whose
+        # name is only hit by a trailing token (e.g. Brgy "Cebu" in San Isidro, Isabela) ranks last
+        score = (cross or toks[0] not in name_t, tier, r["city"] not in PRIORITY_CITIES, -len(name_t), -loc_exact, len(nm), r["label"])
         hits.append((score, r))
+    if any(not h[0][0] for h in hits):             # drop cross-matches when clean matches exist
+        hits = [h for h in hits if not h[0][0]]
     hits.sort(key=lambda h: h[0])
     return len(hits), [public(r) for _, r in hits[:limit]]
 

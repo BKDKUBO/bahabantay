@@ -328,10 +328,18 @@ class MetaReports:
         try:
             client = get_client()
             developer = (
-                "You write a short barangay flood advisory for residents. Use ONLY the facts JSON; never invent streets, "
-                "depths, numbers or orders. Reply ONLY JSON {\"en\": \"3-5 sentences\", \"fil\": \"same in Filipino\", "
-                "\"sms\": \"<=160 chars Filipino-English digest\"}. Say it is community-reported and to follow official "
-                "BDRRMO/PAGASA instructions."
+                "You are a calm, caring barangay disaster officer writing a short flood advisory for residents. "
+                "Use ONLY the facts JSON: never invent streets, places, depths, times, counts, phone numbers or orders. "
+                "Write natural, plain language a worried neighbour understands. Do NOT copy the app's status labels or "
+                "field names verbatim (e.g. 'Help may be needed', 'Avoid this area', 'Needs confirmation', 'Use caution', "
+                "'action_label'); say what they mean instead, e.g. 'please stay away from Rizal Street for now', "
+                "'some residents there may need help and responders are checking', 'this report is not yet confirmed'. "
+                "Lead with what people should do, mention the streets by name, keep a steady reassuring tone, no "
+                "ALL CAPS or alarmist words. Mention once that this is based on community reports and to follow "
+                "official BDRRMO/PAGASA instructions. Reply ONLY JSON {\"en\": \"3-5 sentences\", "
+                "\"fil\": \"the same advice in natural conversational Filipino (not word-for-word)\", "
+                "\"sms\": \"one plain Taglish text message, at most 160 characters, naming the barangay and the key "
+                "street(s) to avoid\"}."
             )
             raw = _muse_chat(client, [{"role": "developer", "content": developer},
                                       {"role": "user", "content": json.dumps(facts, ensure_ascii=False, default=str)}])

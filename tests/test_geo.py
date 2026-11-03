@@ -65,3 +65,12 @@ def test_find_empty_and_short(client):
     assert client.get("/api/barangays/find", params={"q": "zzqxw"}).json() == {"q": "zzqxw", "total": 0, "items": []}
     assert client.get("/api/barangays/find", params={"q": "a"}).json()["items"] == []
     assert geo.short_region("Region XI (Davao Region)") == "Davao Region"
+
+
+def test_search_qualifier_does_not_cross_match_name():
+    from app import geo
+    n, res = geo.search_full("san isidro, cebu", 20)
+    assert res and all(r["name"] == "San Isidro" and r["province"] == "Cebu" for r in res)
+    assert not any("Isabela" in r["label"] for r in res)
+    # a name-only query still finds barangays named Cebu
+    assert any(r["name"].lower().startswith("cebu") or "cebu" in r["name"].lower() for r in geo.search("cebu"))

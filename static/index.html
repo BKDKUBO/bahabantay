@@ -3,6 +3,7 @@
 <title>BahaBantay — flood pulse for your barangay</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>(function(){try{var t=localStorage.getItem('bb-theme');}catch(e){}if(t!=='dark'&&t!=='light')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;})();</script>
 <style>
 :root{--navy:#0b2545;--navy2:#13315c;--blue:#1d6fb8;--sky:#e8f1fb;--teal:#0f8b8d;--orange:#e8590c;--amber:#f59f00;--red:#c62828;--ink:#0b2545;--mut:#4a5a70;--card:#fff;--bg:#f2f5f9}
 *{box-sizing:border-box}body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
@@ -74,9 +75,42 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
 .acl .note{cursor:default;color:var(--mut);font-size:14px;min-height:0;background:#fafbfd}.acl .note:hover{background:#fafbfd}.acl .err{color:var(--red)}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid #c9d3e0;border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes sp{to{transform:rotate(360deg)}}
 .chip{display:inline-flex;align-items:center;gap:8px;background:#e6f4ea;border:1px solid #7cc39a;color:#0b5a2f;border-radius:999px;padding:6px 6px 6px 12px;margin:6px 0;font-size:14px}.chip button{border:0;background:#fff;border-radius:999px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer;min-height:36px}
+
+/* dark theme */
+.thm{border:2px solid #ffffff55;background:#ffffff22;color:#fff;border-radius:999px;width:44px;height:44px;font-size:20px;cursor:pointer;flex:none}
+.hrow .hr{display:flex;gap:8px;align-items:center}
+html[data-theme=dark]{color-scheme:dark;--navy:#0a1a30;--blue:#5aa9ec;--sky:#16324f;--ink:#e6edf5;--mut:#a9b6c6;--card:#17212e;--bg:#0e141c}
+html[data-theme=dark] header{background:#0a1a30;border-bottom:1px solid #24364d}
+html[data-theme=dark] .mode button.on{background:#e6edf5;color:#0a1a30}
+html[data-theme=dark] select,html[data-theme=dark] input,html[data-theme=dark] textarea{background:#1b2633;border-color:#3a4a5e;color:var(--ink)}
+html[data-theme=dark] .b1{background:#1d6fb8;color:#fff}html[data-theme=dark] .b2{background:var(--card);color:var(--ink);border-color:#8fa3bb}
+html[data-theme=dark] .b4{background:var(--sky);color:var(--ink);border-color:var(--blue)}
+html[data-theme=dark] .card,html[data-theme=dark] .panel,html[data-theme=dark] .und,html[data-theme=dark] .drawer,html[data-theme=dark] .acl{background:var(--card);color:var(--ink);box-shadow:0 1px 3px #0008}
+html[data-theme=dark] .col{background:#121b26}
+html[data-theme=dark] .t-safe{color:#5fd3c4}html[data-theme=dark] .t-caution{color:#ffc94d}html[data-theme=dark] .t-avoid{color:#ff9a5c}html[data-theme=dark] .t-confirm{color:#b6c2d1}html[data-theme=dark] .t-help{color:#ff8a8a}
+html[data-theme=dark] .fresh{color:#b6c2d1}html[data-theme=dark] .hot a{color:var(--ink);border-color:#24364d}html[data-theme=dark] .hot a span{color:var(--blue)}
+html[data-theme=dark] .btn{background:var(--card);color:var(--ink);border-color:#8fa3bb}html[data-theme=dark] .btn.pri{background:#1d6fb8;border-color:#1d6fb8;color:#fff}html[data-theme=dark] .btn.red{border-color:#ff8a8a;color:#ff8a8a}
+html[data-theme=dark] .choice button{background:#1b2633;border-color:#3a4a5e;color:var(--ink)}html[data-theme=dark] .choice button.on{background:var(--sky);border-color:var(--blue)}
+html[data-theme=dark] .steps i{background:#3a4a5e}html[data-theme=dark] .steps i.on{background:var(--blue)}
+html[data-theme=dark] .und div,html[data-theme=dark] .acl li{border-color:#24364d}
+html[data-theme=dark] .note,html[data-theme=dark] .cov{background:#3a2e10;color:#ffe3a3}
+html[data-theme=dark] .acl .note,html[data-theme=dark] .acl .note:hover{background:#121b26;color:var(--mut)}html[data-theme=dark] .acl mark{background:#7a5d00;color:#fff}
+html[data-theme=dark] .ladder span{background:#1b2633;color:#a9b6c6}html[data-theme=dark] .ladder span.on{background:#1d6fb8;color:#fff}
+html[data-theme=dark] pre{background:#0b1118;color:var(--ink)}
+html[data-theme=dark] .pill.sample{background:#2a3646;color:#dbe4ee}html[data-theme=dark] .pill.live{background:#12391d;color:#9be9a8}html[data-theme=dark] .pill.warn{background:#3a2e10;color:#ffe3a3}
+html[data-theme=dark] .chip{background:#12391d;border-color:#2f7a4a;color:#c9f2d4}html[data-theme=dark] .chip button{background:#1b2633;color:var(--ink)}
+html[data-theme=dark] .toast{background:#e6edf5;color:#0a1a30}
+.note.danger{background:#ffe3e3;color:#7a1010}.panel.waitp{background:#e8f1fb}
+html[data-theme=dark] .note.danger{background:#4a1515;color:#ffd6d6}html[data-theme=dark] .panel.waitp{background:var(--sky)}
+html[data-theme=dark] .ev{border-left-color:#3a4a5e}
+html[data-theme=dark] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
+html[data-theme=dark] .leaflet-container{background:#1b2633}
+html[data-theme=dark] .leaflet-popup-content-wrapper,html[data-theme=dark] .leaflet-popup-tip{background:var(--card);color:var(--ink)}
+html[data-theme=dark] .leaflet-control-attribution{background:#0e141ccc!important;color:#a9b6c6}html[data-theme=dark] .leaflet-control-attribution a{color:#8cc4f2}
+html[data-theme=dark] .leaflet-bar a{background:#1b2633;color:var(--ink);border-color:#3a4a5e}
 </style></head><body>
 <header><div class="hrow"><h1>🌊 BahaBantay</h1>
-<div class="mode" role="tablist"><button id="mRes" class="on" onclick="setMode('res')">Resident</button><button id="mResp" onclick="setMode('resp')">Responder</button></div></div>
+<div class="hr"><button id="thm" class="thm" type="button" onclick="toggleTheme()" aria-label="Switch to dark theme" title="Switch to dark theme">🌙</button><div class="mode" role="tablist"><button id="mRes" class="on" onclick="setMode('res')">Resident</button><button id="mResp" onclick="setMode('resp')">Responder</button></div></div></div>
 <div class="live" id="live"><span class="pill sample">Checking AI provider…</span></div></header>
 <main>
 <!-- RESIDENT -->
@@ -169,7 +203,7 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
 
 <!-- HELP FLOW -->
 <div class="sheet" id="hsheet"><header><button class="x" onclick="closeSheet('hsheet')" aria-label="Close">✕</button><b>🆘 I need help / Kailangan ko ng tulong</b></header>
-<main class="wrap"><div class="note" style="background:#ffe3e3;color:#7a1010">If life is in danger, call <b>911</b> or your barangay now. This request goes to the responder queue; it is not a guaranteed rescue.</div>
+<main class="wrap"><div class="note danger">If life is in danger, call <b>911</b> or your barangay now. This request goes to the responder queue; it is not a guaranteed rescue.</div>
  <div id="hForm"><label>Barangay</label><input id="hBrgy" autocomplete="off" placeholder="Search barangay"><div id="hBrgySug" class="src"></div><label>Street or landmark</label><input id="hStreet" placeholder="e.g. M. H. del Pilar St, blue gate">
  <label>What do you need? (who, how many)</label><textarea id="hNote" rows="3" placeholder="Hal. 3 kami, may lola na hindi makalakad, nasa 2nd floor"></textarea>
  <div class="row"><button class="btn sm" onclick="gps('h')">📡 Share my location</button><span class="src" id="hLoc">Optional. Exact location is shown to responders only.</span></div>
@@ -335,7 +369,7 @@ function openDrawer(id){const i=grid.find(x=>x.id==id);if(!i)return;const step=L
  <div class="row"><button class="btn sm pri" onclick="review(${i.id},'confirm')">✓ Confirm</button><button class="btn sm" onclick="review(${i.id},'reject')">✕ Reject</button><button class="btn sm" onclick="review(${i.id},'request_info')">❓ Request more info</button><button class="btn sm red" onclick="review(${i.id},'escalate')" ${i.confidence==null?'disabled title="Escalation needs a confidence value (safety rule)"':''}>⬆ Escalate</button></div>
  <h3>Evidence</h3>${i.evidence.map(e=>`<div class="ev ${e.source}"><b>${{user_reported:'👤 User reported',ai_detected:'🤖 AI detected',community_confirmed:'👥 Community',responder:'🛡 Responder'}[e.source]}</b> <span class="src">${new Date(e.at).toLocaleString()}</span><br>${esc(e.text)}</div>`).join('')}
  <div class="thumbs">${i.members.filter(m=>m.image_path).map(m=>`<a href="${esc(m.image_path)}" target="_blank"><img src="${esc(m.image_path)}" alt="report ${m.id}"></a>`).join('')}</div>
- ${i.members.filter(m=>m.status=='needs_info').map(m=>`<div class="panel" style="background:#e8f1fb"><b>❓ Waiting on reporter (#${m.id}):</b> ${esc(m.question)}</div>`).join('')}
+ ${i.members.filter(m=>m.status=='needs_info').map(m=>`<div class="panel waitp"><b>❓ Waiting on reporter (#${m.id}):</b> ${esc(m.question)}</div>`).join('')}
  <h3>Share text</h3><pre>${esc(i.share_text)}</pre>`;$('drawer').classList.add('on')}
 async function review(id,a){const note=a=='request_info'?(prompt('What do you need to know?')||''):'';try{await post(`/api/incidents/${id}/review`,{action:a,note});toast('Saved: '+a.replace('_',' '));await loadGrid();openDrawer(id)}catch(e){toast(e.message)}}
 async function genAdvisory(){const b=$('rbrgy').value||$('brgy').value,btn=$('advBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span>Writing…';
@@ -347,4 +381,10 @@ async function genAdvisory(){const b=$('rbrgy').value||$('brgy').value,btn=$('ad
 $('askf').onsubmit=async e=>{e.preventDefault();const b=$('rbrgy').value||$('brgy').value;if(!$('askq').value.trim())return;$('ans').textContent='…';
  try{const j=await post('/api/ask',{barangay:b,question:$('askq').value});$('ans').textContent=j.answer;$('askSrc').textContent=`· ${b} · ${j.provider=='meta'?'Muse Spark':'grounded template'}`}catch(e){$('ans').textContent='Error: '+e.message}};
 (async()=>{await loadHealth();await loadBrgys();await refresh();if(location.hash=='#responder')setMode('resp')})();
-</script></body></html>
+</script><script>
+function paintThemeBtn(){const d=document.documentElement.dataset.theme==='dark',b=document.getElementById('thm');if(!b)return;b.textContent=d?'☀️':'🌙';const l=d?'Switch to light theme':'Switch to dark theme';b.setAttribute('aria-label',l);b.title=l;b.setAttribute('aria-pressed',d);document.querySelector('meta[name=theme-color]').content=d?'#0a1a30':'#0b2545'}
+function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('bb-theme',t)}catch(e){}paintThemeBtn()}
+paintThemeBtn();
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{if(!localStorage.getItem('bb-theme')){document.documentElement.dataset.theme=e.matches?'dark':'light';paintThemeBtn()}})}catch(e){}
+</script>
+</body></html>
