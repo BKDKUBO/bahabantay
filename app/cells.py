@@ -51,6 +51,7 @@ def evidence(r: dict) -> float:
     """0..1 quality of one report: confident photo > reporter's tap > note only."""
     lvl, src = assess.report_level(r)
     if src == "ai_detected": q = max(0.6, min(1.0, r.get("confidence") or 0.6))
+    elif r.get("reported_depth_cm") is not None: q = 0.6
     elif lvl: q = 0.55
     else: q = 0.3
     if r.get("kind") == "help": q = max(q, 0.6)
@@ -88,7 +89,8 @@ def build(reports: list[dict], now: datetime, votes_by_report: dict[int, dict] |
         lvls = [assess.report_level(r)[0] for r, _ in weighted]
         lvls = [l for l in lvls if l]
         level = max(lvls, key=LEVEL_ORDER.index) if lvls else None
-        depths = [(r["depth_cm"], w) for r, _, w in items if r.get("depth_cm") is not None]
+        depths = [(r["depth_cm"] if r.get("depth_cm") is not None else r.get("reported_depth_cm"), w) for r, _, w in items]
+        depths = [(d, w) for d, w in depths if d is not None]
         depth = round(sum(d * w for d, w in depths) / sum(w for _, w in depths)) if depths else None
         independent = len(best)
         confirmed = independent >= 2 or still > 0 or verified
@@ -96,10 +98,11 @@ def build(reports: list[dict], now: datetime, votes_by_report: dict[int, dict] |
         elif conf >= OBSERVED_MIN and confirmed: state = "observed"
         else: state = "unconfirmed"
         if gone >= 2 and gone > still: state, level = "stale", "none"
+        car_no = any(r.get("car_passable") == "no" for r, age, _ in items if age <= RECENT_MIN)
         rising = [x for x in ((r.get("rising") or (r.get("assessment") or {}).get("rising")) for r, _, _ in items) if x]
         c = {"id": f"{row}:{col}", "bounds": bounds(row, col), "state": state, "confidence": round(conf, 2),
              "level": level, "depth_cm_weighted": depth, "reports": len(items), "independent_reporters": independent,
-             "last_observed_min_ago": int(newest), "people_at_risk": any(r.get("people_at_risk") or r.get("kind") == "help" for r, _, _ in items),
+             "last_observed_min_ago": int(newest), "cars_cannot_pass": car_no, "people_at_risk": any(r.get("people_at_risk") or r.get("kind") == "help" for r, _, _ in items),
              "barangays": sorted({r["barangay"] for r, _, _ in items}), "sample": all(r.get("simulated") for r, _, _ in items),
              "streets": sorted({r["street"] for r, _, _ in items})[:4]}
         if responder:

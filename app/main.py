@@ -32,6 +32,9 @@ class Review(BaseModel):
 class Publish(BaseModel):
     water_level: str | None = None   # reporter's correction on the "AI understood" card
     rising: str | None = None
+    trend: str | None = None
+    car_passable: str | None = None
+    reported_depth_cm: int | None = None
     street: str | None = None
 
 
@@ -104,7 +107,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
             if view == "responder":
                 inc["evidence"] = assess.evidence(rs, vrows, rv)
                 inc["members"] = [{k: r.get(k) for k in ("id", "reported_at", "note", "image_path", "depth_cm", "band", "confidence",
-                                   "reference", "water_level", "rising", "provider", "kind", "lat", "lng", "status", "question", "simulated")}
+                                   "reference", "water_level", "rising", "trend", "car_passable", "reported_depth_cm", "provider", "kind", "lat", "lng", "status", "question", "simulated")}
                                   | {"assessment": r.get("assessment")} for r in rs]
             else:  # public: approximate location only, no free-text notes from help requests
                 inc["lat"], inc["lng"] = round(inc["lat"], 3), round(inc["lng"], 3)
@@ -112,6 +115,21 @@ def create_app(db_path=None, provider=None) -> FastAPI:
             out.append(inc)
         out.sort(key=lambda i: (-i["priority_score"], i["updated_min_ago"]))
         return out
+
+    def report_fields(trend, rising, car, cm):
+        """Validate the extra report fields; trend and the legacy rising flag are kept consistent."""
+        trend = (trend or "").strip() or None; rising = (rising or "").strip() or None; car = (car or "").strip() or None
+        if trend is not None and trend not in assess.TRENDS: raise HTTPException(422, f"trend must be one of {list(assess.TRENDS)}")
+        if rising is not None and rising not in ("yes", "no", "unsure"): rising = None
+        if car is not None and car not in assess.PASSABLE: raise HTTPException(422, "car_passable must be yes, no or unsure")
+        if trend: rising = assess.TREND_TO_RISING[trend]
+        elif rising: trend = assess.RISING_TO_TREND.get(rising)
+        val = None
+        if cm not in (None, ""):
+            try: val = int(float(cm))
+            except (TypeError, ValueError): raise HTTPException(422, "reported_depth_cm must be a number")
+            if not 0 <= val <= 300: raise HTTPException(422, "reported_depth_cm must be 0-300")
+        return trend, rising, car, val
 
     def client_key(cid):
         """Anonymous per-browser id, hashed so the stored value can't be linked back to the raw id."""
@@ -197,7 +215,9 @@ def create_app(db_path=None, provider=None) -> FastAPI:
                             barangay: str = Form(...), street: str = Form(...), note: str = Form(""),
                             lang: str = Form(""), water_level: str = Form(""), rising: str = Form(""),
                             loc_source: str = Form("map"), draft: bool = Form(False),
-                            client_id: str = Form("")):
+                            client_id: str = Form(""), trend: str = Form(""), car_passable: str = Form(""),
+                            reported_depth_cm: str = Form("")):
+        trend, rising, car_passable, rep_cm = report_fields(trend, rising, car_passable, reported_depth_cm)
         if not (-90 <= lat <= 90 and -180 <= lng <= 180):
             raise HTTPException(422, "invalid coordinates")
         if not barangay.strip() or not street.strip():
@@ -221,7 +241,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
                "barangay": bname, "psgc_code": code, "client_id": client_key(client_id), "street": street.strip(), "note": note,
                "lang": lang if lang in ("fil", "en") else detect_lang(note), "image_path": f"/uploads/{name}",
                "provider": seg.source or vision.name, "water_level": water_level if water_level in assess.LEVELS else None,
-               "rising": rising if rising in ("yes", "no", "unsure") else None, "kind": "flood",
+               "rising": rising, "trend": trend, "car_passable": car_passable, "reported_depth_cm": rep_cm, "kind": "flood",
                "loc_source": loc_source if loc_source in ("gps", "map", "barangay") else "map",
                "assessment": ext, "status": "draft"}
         rid = db.insert(conn, rec)
@@ -237,6 +257,7 @@ def create_app(db_path=None, provider=None) -> FastAPI:
         return {"street": r["street"], "barangay": r["barangay"], "covered": covered(r["barangay"]), "approximate": r.get("loc_source") == "barangay",
                 "level": lvl, "level_source": src, "photo_level": assess.BAND_TO_LEVEL.get(r["band"]) if r["band"] != "cant_tell" else None,
                 "reporter_level": r.get("water_level"), "rising": r.get("rising") or a.get("rising"),
+                "trend": r.get("trend"), "car_passable": r.get("car_passable"), "reported_depth_cm": r.get("reported_depth_cm"),
                 "hazards": [assess.HAZARD_LABEL[h] for h in a.get("hazards", [])], "people_at_risk": bool(a.get("people_at_risk")),
                 "summary": a.get("summary_en"), "vision_provider": r.get("provider"), "text_provider": a.get("source"),
                 "confidence": r.get("confidence")}
@@ -248,7 +269,11 @@ def create_app(db_path=None, provider=None) -> FastAPI:
         if r["status"] != "draft": raise HTTPException(409, "already published")
         if p.water_level is not None and p.water_level not in assess.LEVELS: raise HTTPException(422, "bad water_level")
         if p.water_level: conn.execute("UPDATE reports SET water_level=? WHERE id=?", (p.water_level, rid))
-        if p.rising in ("yes", "no", "unsure"): conn.execute("UPDATE reports SET rising=? WHERE id=?", (p.rising, rid))
+        if p.trend or p.rising or p.car_passable or p.reported_depth_cm is not None:
+            t, ri, car, cm = report_fields(p.trend or "", p.rising or "", p.car_passable or "", p.reported_depth_cm)
+            if t or ri: conn.execute("UPDATE reports SET trend=?, rising=? WHERE id=?", (t, ri, rid))
+            if car: conn.execute("UPDATE reports SET car_passable=? WHERE id=?", (car, rid))
+            if cm is not None: conn.execute("UPDATE reports SET reported_depth_cm=? WHERE id=?", (cm, rid))
         if p.street and p.street.strip(): conn.execute("UPDATE reports SET street=? WHERE id=?", (p.street.strip(), rid))
         conn.execute("UPDATE reports SET status='ok', reported_at=? WHERE id=?", (now().isoformat(timespec="seconds"), rid)); conn.commit()
         return finalize(rid)

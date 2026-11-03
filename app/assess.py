@@ -13,6 +13,16 @@ from datetime import datetime, timedelta, timezone
 from .agent import meters, ts
 
 LEVELS = ["none", "ankle", "knee", "waist", "higher"]
+TRENDS = ("rising", "steady", "receding", "unsure")
+PASSABLE = ("yes", "no", "unsure")
+TREND_TO_RISING = {"rising": "yes", "steady": "no", "receding": "no", "unsure": "unsure"}
+RISING_TO_TREND = {"yes": "rising", "unsure": "unsure"}       # legacy "no" is ambiguous (steady or receding)
+RECENT_FIELD_MIN = 90   # car-passable / trend answers older than this no longer drive the label
+
+
+def level_from_cm(cm):
+    if cm is None: return None
+    return "none" if cm < 5 else "ankle" if cm < 25 else "knee" if cm < 60 else "waist" if cm < 110 else "higher"
 BAND_TO_LEVEL = {"none": "none", "ankle": "ankle", "knee": "knee", "waist": "waist", "chest": "higher"}
 LEVEL_CM = {"none": 0, "ankle": 10, "knee": 40, "waist": 90, "higher": 130}
 HAZARDS = {
@@ -84,6 +94,8 @@ def report_level(r: dict) -> tuple[str | None, str | None]:
         return BAND_TO_LEVEL.get(r["band"]), "ai_detected"
     if r.get("water_level") in LEVELS:
         return r["water_level"], "user_reported"
+    if r.get("reported_depth_cm") is not None:
+        return level_from_cm(r["reported_depth_cm"]), "user_reported"
     lv = (r.get("assessment") or {}).get("water_level")
     return (lv, "user_reported") if lv in LEVELS else (None, None)
 
@@ -173,7 +185,14 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
     if lvl is None:
         lvl, lvl_src = next(((l, s) for l, s in reversed(lv_pairs) if l), (None, None))
     rising = any(r.get("rising") == "yes" or (r.get("assessment") or {}).get("rising") == "yes" for r in rs) or "rising_fast" in hz
+    recent = [r for r in rs if (now - ts(r)).total_seconds() <= RECENT_FIELD_MIN * 60]
+    trend = next((r["trend"] for r in reversed(recent) if r.get("trend") in TRENDS and r["trend"] != "unsure"), None)
+    if trend in ("steady", "receding"): rising = False          # newest first-hand answer wins over older "rising"
+    elif trend == "rising": rising = True
+    car = next((r["car_passable"] for r in reversed(recent) if r.get("car_passable") in ("yes", "no")), None)
+    rep_cm = next((r["reported_depth_cm"] for r in reversed(rs) if r.get("reported_depth_cm") is not None), None)
     sev = "critical" if help_req else severity(lvl, hz, people)
+    if car == "no" and sev in ("unknown", "low"): sev = "moderate"
     indep = len({(f"c:{r['client_id']}" if r.get('client_id') else f"r:{r['id']}") for r in rs})   # same device = one reporter
     lad = ladder(indep, votes, reviews)
     last_action = reviews[-1]["action"] if reviews else None
@@ -181,6 +200,8 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
     photo_conf = [r["confidence"] for r in rs if r.get("band") not in (None, "cant_tell") and r.get("confidence")]
     if photo_conf:
         conf = max(photo_conf)
+    elif rep_cm is not None:
+        conf = 0.65  # reporter gave a depth in cm
     elif lvl is not None:
         conf = 0.6   # reporter tapped a level / described it; photo gave no usable estimate
     elif help_req:
@@ -198,6 +219,8 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
     elif help_req or people:
         action = "Help may be needed"
     elif {"live_wire", "strong_current"} & set(hz):   # electrical/current hazard: avoid even before depth is confirmed
+        action = "Avoid this area"
+    elif car == "no" and lvl != "none":   # a resident on the spot says cars cannot pass
         action = "Avoid this area"
     elif conf is None or conf < MIN_CONF or lvl is None:
         action = "Needs confirmation"
@@ -224,6 +247,8 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
         if h in ("live_wire", "strong_current", "stranded_person"): reasons.append(HAZARD_LABEL[h].lower())
     if lvl in ("knee", "waist", "higher"): reasons.append(f"{lvl}-deep water")
     if rising: reasons.append("water rising")
+    if car == "no": reasons.append("cars cannot pass (resident)")
+    if trend == "receding": reasons.append("water receding")
     if len(rs) > 1: reasons.append(f"{len(rs)} reports grouped")
     if last_action == "reject":
         tier = "monitor"; reasons = ["rejected by responder"]
@@ -249,7 +274,8 @@ def assess_incident(rs: list[dict], votes: dict, reviews: list[dict], now: datet
             "people_at_risk": people or help_req, "rising": rising and not cleared, "confidence": conf, "ladder": lad,
             "needs_human_verification": lad != "responder_verified", "tier": tier, "priority_score": score,
             "priority_reason": "; ".join(dict.fromkeys(reasons)) or "low depth, no hazards reported",
-            "updated_min_ago": age_min, "independent_reporters": indep, "reported_min_ago": first_min, "flood_status": flood_status,
+            "updated_min_ago": age_min, "independent_reporters": indep, "trend": trend or ("rising" if rising else None),
+            "car_passable": car, "reported_depth_cm": rep_cm, "reported_min_ago": first_min, "flood_status": flood_status,
             "no_longer_flooded_votes": gone, "active": age_min <= ACTIVE_H * 60 and last_action != "reject"}
 
 

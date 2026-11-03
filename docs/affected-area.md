@@ -8,3 +8,9 @@ A barangay is a label, not a flood footprint. Each report is snapped to a ~250 m
 - **States:** *Observed & confirmed* (solid): newest report ≤ 90 min, confidence ≥ 0.5 and ≥ 2 independent reporters / a community vote / responder confirm. *Unconfirmed* (dashed): recent but single reporter. *Old or weak* (gray). No square = no data, never "not flooded".
 - **Privacy:** the public map and API show only the square; responders (`view=responder`) also get the exact points.
 - **Demo clock:** sample reports are re-timed relative to now on start and every 30 min (`BAHABANTAY_DEMO_CLOCK=1`), so the demo always looks live.
+
+## Extra report fields
+
+- **Depth in cm** (optional, 0–300): used for the level when the photo gives no confident estimate and the reporter did not tap a level (ankle < 25, knee < 60, waist < 110, else higher). Confidence 0.65; feeds the cell's weighted depth.
+- **Water trend** (rising / steady / going down / not sure): replaces the old yes/no "rising" question; the newest answer within 90 min wins, so a "going down" report cancels an older "rising". The legacy `rising` field is still accepted and kept in sync.
+- **Can a car pass?** (yes / no / not sure): a recent "no" turns the label into "Avoid this area" (needs verification until a responder confirms) and is shown on the cell.

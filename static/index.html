@@ -142,8 +142,11 @@ pre{white-space:pre-wrap;background:#f6f8fa;padding:10px;border-radius:10px;font
   <div id="pickmap" style="margin-top:8px"></div><button class="btn pri full" onclick="go(3)">Next</button></div>
  <div id="s3" class="hide"><h2>3 · How high is the water?</h2>
   <div class="choice" id="lvl"><button data-v="ankle">🦶<br>Ankle</button><button data-v="knee">🦵<br>Knee</button><button data-v="waist">🧍<br>Waist</button><button data-v="higher">⬆️<br>Higher</button></div>
-  <label>Is it rising? / Tumataas ba?</label>
-  <div class="choice c3" id="rise"><button data-v="yes">Yes / Oo</button><button data-v="no">No / Hindi</button><button data-v="unsure">Not sure</button></div>
+  <label for="fCm">Depth in cm, if you know it <span class="src">(optional)</span></label><input id="fCm" type="number" inputmode="numeric" min="0" max="300" placeholder="e.g. 45">
+  <label>Is the water… / Ang tubig ay…</label>
+  <div class="choice" id="rise"><button data-v="rising">↑ Rising<br><small>Tumataas</small></button><button data-v="steady">→ Steady<br><small>Hindi gumagalaw</small></button><button data-v="receding">↓ Going down<br><small>Bumababa</small></button><button data-v="unsure">Not sure</button></div>
+  <label>Can a car pass? / Makakadaan ba ang kotse?</label>
+  <div class="choice c3" id="car"><button data-v="yes">🚗 Yes / Oo</button><button data-v="no">⛔ No / Hindi</button><button data-v="unsure">Not sure</button></div>
   <label>Anything else? (optional)</label><textarea id="fNote" rows="3" placeholder="Hal. May matanda sa 2nd floor, may kable sa tubig…"></textarea>
   <button class="btn sm hide" id="mic" style="margin-top:6px" onclick="dictate()">🎤 Speak instead (browser speech-to-text, not Meta)</button>
   <button class="btn pri full" onclick="analyze()">Send to BahaBantay</button></div>
@@ -185,7 +188,7 @@ const LADDER=[["user_reported","User reported"],["ai_grouped","AI grouped"],["co
 const LVL={none:'No water',ankle:'Ankle-deep',knee:'Knee-deep',waist:'Waist-deep',higher:'Above waist'};
 const PROV={meta:'Meta AI (SAM 3.1)','mock-fallback':'Offline estimator — Meta unavailable',mock:'Offline estimator',sample:'Sample data',resident:'Resident'};
 const CID=localStorage.bbcid||(localStorage.bbcid=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)));
-let health=null,mode='res',incs=[],shareTxt='',photoBlob=null,pick=null,draft=null,lvl='',rise='',lvl2='';
+let health=null,mode='res',incs=[],shareTxt='',photoBlob=null,pick=null,draft=null,lvl='',rise='',car='',lvl2='';
 const ago=m=>m==null?'':m<1?'just now':m<60?`${m} min ago`:`${Math.floor(m/60)} h ${m%60} min ago`;
 function toast(t){toast.el=$('toast');toast.el.textContent=t;toast.el.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>toast.el.style.display='none',3200)}
 async function copy(t){try{await navigator.clipboard.writeText(t);toast('Copied. Paste it in Messenger, Facebook or SMS.')}catch{prompt('Copy this:',t)}}
@@ -218,7 +221,7 @@ async function loadBrgys(){const bs=await J('/api/barangays');active=bs;if(!$('b
 function card(i,opts={}){const [ic,k]=ACT[i.action_label];const step=LADDER.findIndex(l=>l[0]==i.ladder);
  return `<div class="card a-${k}" ${opts.click?`onclick="openDrawer(${i.id})"`:''}><div class="top"><div><div class="tag t-${k}">${ic} ${i.action_label.toUpperCase()}</div>
  <div style="font-weight:700;font-size:17px">${esc(i.street)}${i.kind=='help'?' — help request':''}</div></div>${i.sample?'<span class="pill sample">Sample report</span>':''}${i.covered===false?'<span class="pill warn">Outside responder coverage</span>':''}</div>
- <div class="meta">${i.level?'🌊 '+LVL[i.level]:'🌊 Depth unknown'}${i.rising?' · ↑ rising':''} · ${i.reports} report${i.reports>1?'s':''}</div>
+ <div class="meta">${i.level?'🌊 '+LVL[i.level]:'🌊 Depth unknown'}${i.trend&&i.trend!='unsure'?' · '+TR[i.trend]:''}${i.car_passable=='no'?' · ⛔ cars cannot pass':i.car_passable=='yes'?' · 🚗 cars can pass':''} · ${i.reports} report${i.reports>1?'s':''}</div>
  <div class="fresh">🕒 Reported ${ago(i.reported_min_ago)}${i.reports>1&&i.updated_min_ago!=i.reported_min_ago?` · latest ${ago(i.updated_min_ago)}`:''}${i.flood_status=='cleared'?' · <b>✅ No longer flooded (residents)</b>':i.flood_status=='clear_reported'?` · ${i.no_longer_flooded_votes} says no longer flooded, 1 more needed`:''}</div>
  <div class="src">${i.level_source=='ai_detected'?'🤖 depth from photo':i.level?'👤 depth from reporter':'❔ no depth yet'}${i.votes.still+i.votes.clear?` · 👥 ${i.votes.still} still flooded, ${i.votes.clear} clear`:''} · ${LADDER[step][1]}${i.confidence!=null?` · confidence ${Math.round(i.confidence*100)}%`:''}${i.approximate?' · approx. location':''}</div>
  ${opts.click?`<div class="src" style="margin-top:4px"><b>Why:</b> ${esc(i.priority_reason)}</div>`:''}
@@ -234,8 +237,8 @@ async function refresh(){const b=$('brgy').value;const [a,list]=await Promise.al
    fillColor:col,fillOpacity:c.state=='observed'?.6:c.state=='unconfirmed'?.25:.18}).bindPopup(cellPop(c)).addTo(layer)});
  $('legend').innerHTML=`<span class="lg obs"></span>Observed & confirmed <span class="lg unc"></span>Single report / unconfirmed <span class="lg sta"></span>Old or weak data · ${Math.round(cm.cell_m)} m squares, reports fade by half every ${cm.half_life_min} min and expire after ${cm.expire_h} h. Blank = no data, not “no flood”.`;
  if(cm.cells.length)map.fitBounds(L.latLngBounds(cm.cells.flatMap(c=>c.bounds)).pad(.3),{maxZoom:16});else if(m&&m.lat!=null)map.setView([m.lat,m.lng],15);}
-const LCOL={none:'#0f8b8d',ankle:'#f59f00',knee:'#e8590c',waist:'#c62828',higher:'#7b1010'};
-function cellPop(c){return `<b>${{observed:'Observed & confirmed',unconfirmed:'Unconfirmed (single reporter)',stale:'Old or weak data'}[c.state]}</b><br>${c.level?LVL[c.level]:'Depth unknown'}${c.depth_cm_weighted!=null?` (~${c.depth_cm_weighted} cm)`:''}${c.people_at_risk?'<br>🆘 people may need help':''}<br>🕒 last observed ${ago(c.last_observed_min_ago)}<br>Confidence ${Math.round(c.confidence*100)}% · ${c.reports} report${c.reports>1?'s':''} from ${c.independent_reporters} reporter${c.independent_reporters>1?'s':''}<br><span class="src">${c.streets.map(esc).join(', ')}${c.sample?' · sample data':''}</span><br><span class="src">Shown as a ~250 m square to protect reporters' exact location.</span>`}
+const TR={rising:'↑ rising',steady:'→ steady',receding:'↓ going down',unsure:'trend unsure'};const LCOL={none:'#0f8b8d',ankle:'#f59f00',knee:'#e8590c',waist:'#c62828',higher:'#7b1010'};
+function cellPop(c){return `<b>${{observed:'Observed & confirmed',unconfirmed:'Unconfirmed (single reporter)',stale:'Old or weak data'}[c.state]}</b><br>${c.level?LVL[c.level]:'Depth unknown'}${c.depth_cm_weighted!=null?` (~${c.depth_cm_weighted} cm)`:''}${c.people_at_risk?'<br>🆘 people may need help':''}${c.cars_cannot_pass?'<br>⛔ cars cannot pass':''}<br>🕒 last observed ${ago(c.last_observed_min_ago)}<br>Confidence ${Math.round(c.confidence*100)}% · ${c.reports} report${c.reports>1?'s':''} from ${c.independent_reporters} reporter${c.independent_reporters>1?'s':''}<br><span class="src">${c.streets.map(esc).join(', ')}${c.sample?' · sample data':''}</span><br><span class="src">Shown as a ~250 m square to protect reporters' exact location.</span>`}
 async function vote(id,v){const r=await post(`/api/incidents/${id}/vote`,{vote:v});toast('Thanks. Your update helps nearby residents make safer decisions.');refresh()}
 async function checkArea(){$('nearH').scrollIntoView({behavior:'smooth'});const btn=$('checkBtn');if(btn.disabled)return;btn.disabled=true;
  $('advResSrc').textContent='';$('advResText').innerHTML='<span class="spin"></span>Writing the advisory from current reports. This can take up to 40 seconds…';
@@ -244,23 +247,23 @@ async function checkArea(){$('nearH').scrollIntoView({behavior:'smooth'});const 
 function helpSomeone(){$('nearH').textContent='Help verify: tap what you see';$('nearH').scrollIntoView({behavior:'smooth'});
  $('cards').innerHTML=[...incs].sort((a,b)=>(b.action_label=='Needs confirmation')-(a.action_label=='Needs confirmation')).filter(i=>i.kind!='help').map(i=>card(i,{vote:1})).join('')}
 // ---------- report flow
-function openReport(){photoBlob=null;draft=null;lvl=rise='';$('photo').value='';$('photoPrev').style.display='none';$('fNote').value='';$('fStreet').value='';
- $('fBrgy').value=$('brgy').value;document.querySelectorAll('#lvl button,#rise button').forEach(b=>b.classList.remove('on'));go(1);$('rsheet').classList.add('on');
+function openReport(){photoBlob=null;draft=null;lvl=rise=car='';$('fCm').value='';$('photo').value='';$('photoPrev').style.display='none';$('fNote').value='';$('fStreet').value='';
+ $('fBrgy').value=$('brgy').value;document.querySelectorAll('#lvl button,#rise button,#car button').forEach(b=>b.classList.remove('on'));go(1);$('rsheet').classList.add('on');
  setTimeout(()=>{if(!pick){pick=L.map('pickmap').setView([14.657,121.101],15);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pick);
   pick.on('click',e=>setPick(e.latlng.lat,e.latlng.lng,'map'))}pick.invalidateSize();if(pickM){pickM.remove();pickM=null}centerPick($('fBrgy').value)},50);pickAt=null}
 let pickAt=null,pickM=null,hLoc=null;function setPick(lat,lng,src){pickAt={lat,lng,src};if(pickM)pickM.remove();pickM=L.marker([lat,lng]).addTo(pick);$('locMsg').textContent=src=='gps'?'📍 Using your location':'📍 Pin set on map'}
 function gps(w){if(w!='h')nearMe('fBrgy');if(!navigator.geolocation){toast('Location not available');return}navigator.geolocation.getCurrentPosition(p=>{if(w=='h'){hLoc=p.coords;$('hLoc').textContent='📍 Location shared with responders'}else{setPick(p.coords.latitude,p.coords.longitude,'gps');pick.setView([p.coords.latitude,p.coords.longitude],16)}},()=>toast('Could not get location'))}
 function prevPhoto(){const f=$('photo').files[0];if(!f)return;photoBlob=f;$('photoPrev').src=URL.createObjectURL(f);$('photoPrev').style.display='block'}
 async function samplePhoto(){const r=await fetch('/samples/sample_04.jpg');photoBlob=new File([await r.blob()],'sample.jpg',{type:'image/jpeg'});$('photoPrev').src='/samples/sample_04.jpg';$('photoPrev').style.display='block'}
-function go(n){if(n==2&&!photoBlob){toast('Add a photo first');return}if(n==3&&!$('fStreet').value.trim()){toast('Type a street or landmark');return}
+function go(n){if(n==2&&!photoBlob){toast('Add a photo first');return}if(n==4&&$('fCm').value!==''&&!(+$('fCm').value>=0&&+$('fCm').value<=300)){toast('Depth must be 0 to 300 cm');return}if(n==3&&!$('fStreet').value.trim()){toast('Type a street or landmark');return}
  for(let i=1;i<=6;i++)$('s'+i).classList.toggle('hide',i!=n);document.querySelectorAll('#steps i').forEach((e,i)=>e.classList.toggle('on',i<Math.min(n,4)))}
 function choice(id,cb){document.querySelectorAll(`#${id} button`).forEach(b=>b.onclick=()=>{document.querySelectorAll(`#${id} button`).forEach(x=>x.classList.remove('on'));b.classList.add('on');cb(b.dataset.v)})}
-choice('lvl',v=>lvl=v);choice('rise',v=>rise=v);choice('lvl2',v=>lvl2=v);
+choice('lvl',v=>lvl=v);choice('rise',v=>rise=v);choice('car',v=>car=v);choice('lvl2',v=>lvl2=v);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function brgyCenter(b){if(BM[b]&&BM[b].lat!=null&&!(incs.length&&$('brgy').value==b))return{lat:BM[b].lat,lng:BM[b].lng};const pts=incs.length&&$('brgy').value==b?incs:[];return pts.length?{lat:pts.reduce((s,i)=>s+i.lat,0)/pts.length,lng:pts.reduce((s,i)=>s+i.lng,0)/pts.length}:{lat:14.657,lng:121.101}}
 async function analyze(){go(4);['p1','p2','p3','p4'].forEach(p=>$(p).className='');$('p1').className='done';$('p2').className='run';
  const loc=pickAt||{...brgyCenter($('fBrgy').value),src:'barangay'};const fd=new FormData();fd.append('photo',photoBlob);
- Object.entries({lat:loc.lat,lng:loc.lng,loc_source:loc.src,client_id:CID,barangay:$('fBrgy').value,street:$('fStreet').value,note:$('fNote').value,water_level:lvl,rising:rise,draft:'true'}).forEach(([k,v])=>fd.append(k,v));
+ Object.entries({lat:loc.lat,lng:loc.lng,loc_source:loc.src,client_id:CID,barangay:$('fBrgy').value,street:$('fStreet').value,note:$('fNote').value,water_level:lvl,trend:rise,car_passable:car,reported_depth_cm:$('fCm').value,draft:'true'}).forEach(([k,v])=>fd.append(k,v));
  const t=setTimeout(()=>{$('p2').className='done';$('p3').className='run'},2500);
  try{draft=await J('/api/reports',{method:'POST',body:fd})}catch(e){clearTimeout(t);toast('Error: '+e.message);go(3);return}
  clearTimeout(t);$('p2').className='done';$('p3').className='done';$('p4').className='run';await sleep(500);$('p4').className='done';await sleep(300);showUnderstood()}
@@ -268,7 +271,7 @@ function showUnderstood(){const u=draft.understood;lvl2='';document.querySelecto
  const vp=PROV[u.vision_provider]||u.vision_provider,tp={meta:'Muse Spark','mock-fallback':'keyword rules (Meta unavailable)',mock:'keyword rules',none:'—'}[u.text_provider]||u.text_provider;
  $('und').innerHTML=`<div>📍 ${esc(u.street)}, ${esc(u.barangay)}${u.approximate?' <span class="src">(approximate, barangay area)</span>':''}</div>
  <div>🌊 ${u.level?LVL[u.level]:'Depth unknown'} <span class="src">${u.photo_level?`🤖 photo: ${LVL[u.photo_level]} (${vp}, conf ${u.confidence})`:'🤖 photo: no reference object found'}${u.reporter_level?` · 👤 you: ${LVL[u.reporter_level]}`:''}</span></div>
- ${u.rising?`<div>↑ Rising: ${esc(u.rising)}</div>`:''}
+ ${u.trend?`<div>${TR[u.trend]}</div>`:''}${u.car_passable?`<div>${{yes:'🚗 Cars can pass',no:'⛔ Cars cannot pass',unsure:'🚗 Not sure if cars can pass'}[u.car_passable]}</div>`:''}${u.reported_depth_cm!=null?`<div>📏 You said about ${u.reported_depth_cm} cm</div>`:''}
  ${u.hazards.length?`<div>⚠️ ${u.hazards.map(esc).join(', ')} <span class="src">🤖 ${esc(tp)}</span></div>`:''}
  ${u.people_at_risk?'<div>🆘 Someone may need help</div>':''}${u.summary?`<div class="src">“${esc(u.summary)}”</div>`:''}
  ${u.vision_provider=='mock-fallback'?'<div class="note">Meta AI did not respond, so the offline estimator answered this one.</div>':''}`;go(5)}
