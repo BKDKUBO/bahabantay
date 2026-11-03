@@ -5,28 +5,61 @@ Built for the Meta Global AI Developer Hackathon (Oct 26 – Nov 4, 2026), using
 
 Live demo: https://bahabantay-466317436519.asia-southeast1.run.app (append `#responder` for the responder view)
 
-> The map starts with 18 **sample reports** (synthetic, Marikina area, placeholder images) so there is something to look at.
-> Sample reports are not run through the models. Every photo you submit in the app *is* analyzed live by SAM 3.1 and
-> Muse Spark; the header shows which provider is answering and says so if the offline fallback was used.
+> The demo starts with **sample reports** (synthetic, Marikina area, placeholder images), each labeled *Sample report*,
+> so there is something to look at. Sample reports are not run through the models. Every photo you submit in the app *is*
+> analyzed live by SAM 3.1 and Muse Spark; the header shows which provider is answering and says so if the offline fallback was used.
+
+| Resident home | Affected area as 250 m squares | Square details |
+|---|---|---|
+| ![Resident home, Malanday in Danger](docs/screenshots/01-resident-home.png) | ![Map squares with legend](docs/screenshots/02-map-squares.png) | ![Square popup](docs/screenshots/03-square-popup.png) |
+| **Nationwide search (Davao City)** | **Report: depth, trend, car passable** | **AI understood** |
+| ![Barangay in Davao City, outside coverage](docs/screenshots/04-outside-coverage-mindanao.png) | ![Report step](docs/screenshots/05-report-depth-trend-car.png) | ![AI understood card](docs/screenshots/06-ai-understood.png) |
+
+| Responder Action Grid | Evidence drawer |
+|---|---|
+| ![Action Grid](docs/screenshots/07-responder-action-grid.png) | ![Evidence drawer](docs/screenshots/08-evidence-drawer.png) |
+| **Advisory (EN / FIL / SMS)** | **Emergency hotlines** |
+| ![Advisory and SMS](docs/screenshots/09-advisory-sms.png) | ![Hotlines card](docs/screenshots/10-hotlines.png) |
+
+More: [`docs/screenshots/04a-near-me-mindanao.png`](docs/screenshots/04a-near-me-mindanao.png) ("Near me" suggestions from GPS).
 
 ## The loop
 **Report → AI understands → Resident confirms → Alert → Help**
 
-1. **Resident ("Pulse") view**, mobile-first: area status *Safe / Watch / Danger* with report count and freshness,
-   four big actions (*Report flood, Check my area, I need help, Help someone*), nearby incident cards, map below.
-2. **Report flood**: photo → street/landmark (GPS, map tap, or "barangay area" marked approximate) → tap water level
-   (Ankle/Knee/Waist/Higher) + *Is it rising?* + optional note (optional browser speech-to-text; that part is the browser, not Meta).
+1. **Resident ("Pulse") view**, mobile-first: pick any barangay in the Philippines (search, or **📡 Near me** from GPS);
+   area status *Safe / Watch / Danger / No data* with report count and freshness; four big actions (*Report flood, Check my area,
+   I need help, Help someone*); nearby incident cards with "reported N min ago"; tap-to-call hotlines; map below.
+2. **Report flood**: photo → street/landmark (GPS, map tap, or barangay center marked approximate) → water level
+   (Ankle/Knee/Waist/Higher), optional **depth in cm**, **trend** (rising / steady / going down / not sure), **can a car pass?**,
+   optional note (browser speech-to-text available; that part is the browser, not Meta).
 3. Progress screen while **SAM 3.1** segments the photo and **Muse Spark** reads the note.
-4. **"AI understood" card**: what the photo said vs. what the reporter tapped, hazards found, with sources. The reporter
+4. **"AI understood" card**: what the photo said vs. what the reporter entered, hazards found, with sources. The reporter
    can correct the level, then confirms. Nothing is published before that.
 5. **Action card**: what we detected / what to do now / how to help, labeled *AI estimate, verify locally; not an official order*,
-   plus a **Share alert** button (short Filipino-English text for Messenger/Facebook/SMS).
-6. Neighbors tap **Still flooded / Already clear / Not sure** on each incident.
+   plus **Share alert** (short Filipino-English text for Messenger/Facebook/SMS).
+6. Neighbors tap **Still flooded / Already clear / Not sure**; a **No longer flooded** majority (≥2 votes) marks a flood *Safe to pass*.
+   Help requests can't be cleared by votes.
 7. **I need help** sends a high-priority request straight into the responder queue (exact location shown to responders only).
-8. **Responder view — Action Grid**: incidents ranked *Critical / Needs verification / Monitor* with the reason for the
-   priority; evidence drawer (original reports and photos, AI detections, community votes, responder actions, timestamps,
-   confidence, recommendation); **Confirm / Reject / Request more info / Escalate**; advisory generator (English, Filipino,
-   ≤160-char SMS); Q&A (*"Saan pwedeng dumaan ang truck?"*).
+8. **Responder view, Action Grid**: incidents ranked *Critical / Needs verification / Monitor* with the reason;
+   evidence drawer (reports, photos, AI detections, votes, responder actions, timestamps, confidence, recommendation);
+   **Confirm / Reject / Request more info / Escalate**; advisory generator (English, Filipino, ≤160-char SMS); Q&A.
+   "Avoid this area" incidents never sit in Monitor.
+
+## Where is it flooded? Nationwide search + 250 m squares
+- **All 42,010 barangays** (PSA PSGC, Q1 2026) are searchable server-side (`/api/barangays/search`, `/api/barangays/nearest`).
+  Reports outside the demo's responder coverage (Marikina) are accepted and labeled **Outside responder coverage**.
+  A barangay with no reports shows **No data**, never "Safe".
+- A barangay is a label, not a flood footprint. Each report is snapped to a **~250 m square** (`/api/cells`). Solid = observed &
+  confirmed, dashed = single reporter, gray = old or weak. Blank = no data, not "no flood". Each square shows last observed time,
+  weighted depth and confidence. The public map shows only squares; exact points are responder-only.
+- **Decay and dedupe:** a report's weight halves every 60 min and expires after 6 h; several reports from the same device in the
+  same square count as one reporter. A recent "car can't pass" turns the area into *Avoid this area*.
+- Details: [`docs/affected-area.md`](docs/affected-area.md). Data and licenses: [`docs/data-sources.md`](docs/data-sources.md)
+  (PSGC via the MIT-licensed `psgc` package; centroids from HDX/OCHA COD-AB, CC BY-IGO; map tiles © OpenStreetMap).
+
+## Emergency hotlines
+Tap-to-call card for Marikina (Rescue 161) and Quezon City (Helpline 122, QCDRRMO, EOC), numbers checked on marikina.gov.ph and
+quezoncity.gov.ph on Nov 3, 2026. Elsewhere: 911.
 
 ## Where the Meta models are used
 | Step | Model | Code |
@@ -60,6 +93,8 @@ app/depth.py         segmentation → waterline vs reference-object height → d
 app/agent.py         agent tools: nearby reports, duplicate merge, people-at-risk, follow-up question; language detection
 app/aggregate.py     per-street rollup: latest depth, least-squares trend (cm/h), passability
 app/qa.py            grounded responder Q&A
+app/cells.py         250 m grid cells, time decay, expiry, same-device dedupe, confidence
+app/geo.py, app/geo/ PSGC barangay list (42,010) + centroids, search, nearest, coverage
 app/db.py            SQLite (reports, votes, reviews)
 app/providers/       base.py interfaces · meta.py (SAM 3.1 + Muse Spark, visible fallback) · mock.py (deterministic, offline)
 scripts/             seed.py, eval_depth.py, eval_reports.py, make_eval_set.py, smoke_meta_sam.py
@@ -67,17 +102,17 @@ scripts/             seed.py, eval_depth.py, eval_reports.py, make_eval_set.py, 
 API: `GET /api/health` · `POST /api/reports` (multipart; `draft=true` for the confirm step) · `POST /api/reports/{id}/publish` ·
 `POST /api/reports/{id}/answer` · `POST /api/help` · `GET /api/incidents?view=public|responder&barangay=` ·
 `POST /api/incidents/{id}/vote` · `POST /api/incidents/{id}/review` · `GET /api/area/{brgy}` · `GET /api/advisory/{brgy}` ·
-`GET /api/summary/{brgy}` · `GET /api/sitrep/{brgy}` · `POST /api/ask` · `GET /api/reports`, `/api/barangays`.
+`GET /api/cells` · `GET /api/barangays/search?q=` · `GET /api/barangays/nearest?lat=&lng=` · `GET /api/barangays/resolve?label=` · `GET /api/summary/{brgy}` · `GET /api/sitrep/{brgy}` · `POST /api/ask` · `GET /api/reports`, `/api/barangays`.
 
 ## Run it
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m scripts.seed                 # 18 sample reports
+.venv/bin/python -m scripts.seed                 # sample reports (labeled "Sample report")
 .venv/bin/uvicorn app.main:app --port 8765       # http://localhost:8765  (offline estimator by default)
-.venv/bin/pytest -q                              # 44 tests
+.venv/bin/pytest -q                              # 66 tests
 ```
 Live Meta models: put `META_API_KEY=...` and `BAHABANTAY_PROVIDER=meta` in a local `.env` (gitignored) or the environment.
-Other env vars: `BAHABANTAY_META_FALLBACK` (default true), `BAHABANTAY_DB`, `BAHABANTAY_UPLOADS`. Deploy notes: `docs/deploy.md`.
+Other env vars: `BAHABANTAY_META_FALLBACK` (default true), `BAHABANTAY_DB`, `BAHABANTAY_UPLOADS`. Also `BAHABANTAY_HALF_LIFE_MIN` (60), `BAHABANTAY_EXPIRE_H` (6), `BAHABANTAY_DEMO_CLOCK`. Deploy (Cloud Run): [`docs/deploy.md`](docs/deploy.md).
 
 ## Prototype evaluation (synthetic data only)
 | Eval | Data | Result |
@@ -90,6 +125,10 @@ Other env vars: `BAHABANTAY_META_FALLBACK` (default true), `BAHABANTAY_DB`, `BAH
 These are prototype checks on data we wrote and labeled ourselves. They are not field accuracy. Details: `docs/eval/`.
 
 ## Honest limits
+- The advisory generator takes about 26–40 s on the live Meta models (a spinner shows while it works).
+- Barangay centroids are approximate (84 have no polygon match and are flagged); they only label and center the map, never mark a flood.
+- 250 m squares show where reports are, not the true flood boundary; there is no interpolation, elevation or drainage model yet.
+- Responder coverage in the demo is Marikina only; hotlines are verified for Marikina and Quezon City only.
 - No real flood photos with measured depths yet; depth accuracy on real photos is unmeasured.
 - Sample reports are synthetic and use placeholder images.
 - SQLite on one Cloud Run instance; submitted reports reset when the container restarts. No login: the responder view is open in the demo.
